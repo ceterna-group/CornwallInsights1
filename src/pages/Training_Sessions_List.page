@@ -1,0 +1,5 @@
+<apex:page lightningStylesheets="true" >
+
+<apex:enhancedList listId="00B4J000002Yu3M" height="600" customizable="False" rowsPerPage="50"/>
+
+</apex:page>

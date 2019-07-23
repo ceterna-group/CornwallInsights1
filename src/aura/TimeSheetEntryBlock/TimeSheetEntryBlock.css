@@ -1,0 +1,92 @@
+/**
+ * Created by ronanwilliams on 2019-07-17.
+ */
+
+.THIS.entryPanel {
+    background-color: white;
+    border-radius: 3px;
+    border: 0.5px solid grey;
+
+
+}
+
+.THIS .timeGrid {
+    display: grid;
+    grid-template-columns: 40% 10% 10% 10% 10% 10% 10%;
+    padding: 3px;
+    position: relative;
+}
+
+.THIS .entryGrid {
+    display: grid;
+    grid-template-columns: 30% 70%;
+    position: relative;
+}
+
+.THIS .codeName {
+    font-size: 14px;
+}
+
+.THIS .recordValueRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 14.28% 14.28% 14.28% 14.28% 14.28% 14.28% 14.28%;
+    padding-bottom: 3px;
+}
+
+.THIS .labelRow {
+    background-color: #eaeaea;
+}
+
+.THIS .valueRow {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-bottom: 0.5px solid lightgrey;
+}
+
+.THIS .billOptions {
+    text-align: right;
+    /*font-size: 10px;*/
+}
+
+.THIS .entryColumn {
+    text-align: center;
+    width: 100%;
+}
+
+.THIS .inputColumn {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.THIS .inputColumn > input {
+    text-align: center;
+}
+
+.THIS .sldsInput{
+    width: 60%;
+}
+
+.THIS .typeLabel{
+    padding-top: 5px;
+}
+
+.THIS .billable {
+    color: darkgreen;
+}
+
+.THIS .total {
+    font-size: 14px;
+    padding-top: 5px;
+}
+
+.THIS .totalColumn {
+    text-align: center;
+    padding-top: 4px;
+}
+
+.THIS .totalRow {
+    font-size: 14px;
+    font-weight: bold;
+}

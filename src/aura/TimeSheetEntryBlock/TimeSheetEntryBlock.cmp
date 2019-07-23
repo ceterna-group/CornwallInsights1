@@ -1,0 +1,138 @@
+<!--
+ - Created by ronanwilliams on 2019-07-17.
+ -->
+
+<aura:component description="testTime" controller="TimeSheetController"
+                implements="flexipage:availableForAllPageTypes,force:hasRecordId" access="global">
+
+
+    <aura:attribute name="timeSheet" type="Object"/>
+    <aura:attribute name="dates" type="Object[]"/>
+    <aura:attribute name="blockedDates" type="Object[]"/>
+    <aura:attribute name="totals" type="Object[]"/>
+    <aura:attribute name="codes" type="Object[]"/>
+    <aura:attribute name="records" type="Object[]"/>
+    <aura:attribute name="priorRecords" type="Object[]"/>
+    <aura:attribute name="activeField" type="Object"/>
+    <aura:attribute name="responsePending" type="Boolean" default="false"/>
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <force:recordData aura:id="recordLoader"
+                      recordId="{!v.recordId}"
+                      fields="Total_Entry_Time__c,Total_Non_Billable_Entry_Time__c"
+                      targetFields="{!v.timeSheet}"/>
+
+    <div class="slds-panel slds-p-around--medium">
+
+        <!-- TOTALS-->
+        <div class="entryGrid valueRow totalRow">
+            <div class="codeName">
+                <div>WEEK TOTAL</div>
+                <aura:if isTrue="{!v.priorRecords.length > 0}">
+                    <lightning:button variant="brand" onclick="{!c.prefillEntries}">
+                        PREFILL {!v.priorRecords.length} FROM PREVIOUS WEEK
+                    </lightning:button>
+                </aura:if>
+
+            </div>
+            <div>
+                <div class="recordValueRow billOptions billable">
+                    <div class="typeLabel">BILLABLE</div>
+                    <aura:iteration var="total" items="{!v.totals}" indexVar="i">
+                        <div class="totalColumn">{!total[0]}</div>
+                    </aura:iteration>
+                    <div class="entryColumn total">{!v.timeSheet.Total_Entry_Time__c}</div>
+                </div>
+                <div class="recordValueRow billOptions">
+                    <div class="typeLabel">NON-BILLABLE</div>
+                    <aura:iteration var="total" items="{!v.totals}" indexVar="i">
+                        <div class="totalColumn">{!total[1]}</div>
+                    </aura:iteration>
+                    <div class="entryColumn total">{!v.timeSheet.Total_Non_Billable_Entry_Time__c}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DATE HEADER -->
+        <div class="timeGrid labelRow">
+            <div>CI CODE / PROJECT</div>
+            <aura:iteration var="date" items="{!v.dates}">
+                <div class="entryColumn headerColumn">{!date}</div>
+            </aura:iteration>
+            <div class="entryColumn headerColumn">TOTAL</div>
+        </div>
+
+        <!--EXISTING ENTRIES-->
+        <aura:iteration var="record" items="{!v.records}" indexVar="recordIndex">
+
+            <div class="entryGrid valueRow">
+                <div class="codeName">{!record.Name}</div>
+                <div>
+                    <aura:if isTrue="{!not(record.NotBillable)}">
+                        <div class="recordValueRow billOptions billable">
+                            <div class="typeLabel">BILLABLE</div>
+                            <aura:iteration var="day" items="{!record.Entries}" indexVar="i">
+                                <div class="entryColumn">
+                                    <div class="inputColumn" style="{!day[1] == 0 ? 'color:white' : ''}">
+                                        <lightning:input type="number" value="{!day[1]}"
+                                                         variant="label-hidden" class="sldsInput"
+                                                         aura:id="timeSheetEntry"
+                                                         name="{!'billable::' + i + '::' + record.Id +'::'+ (day[1] ? day[1] : 0) +'::'+ recordIndex}"
+                                                         onfocus="{!c.setActiveField}"
+                                                         onfocusout="{!c.adjustEntry}"
+                                                         disabled="{!day[0]}"
+                                                         step="0.25" min="0" max="24"/>
+                                    </div>
+                                </div>
+                            </aura:iteration>
+                            <div class="entryColumn total">{!record.BillableTotal}</div>
+                        </div>
+                    </aura:if>
+                    <div class="recordValueRow billOptions">
+                        <div class="typeLabel">NON-BILLABLE</div>
+                        <aura:iteration var="day" items="{!record.Entries}" indexVar="i">
+                            <div class="entryColumn">
+                                <div class="inputColumn" style="{!day[2] == 0 ? 'color:white' : ''}">
+                                    <lightning:input type="number" value="{!day[2]}"
+                                                     variant="label-hidden" class="sldsInput"
+                                                     aura:id="timeSheetEntry"
+                                                     name="{!'nonbillable::' + i + '::' + record.Id +'::'+ (day[2] ? day[2] : 0) +'::'+ recordIndex}"
+                                                     onfocus="{!c.setActiveField}"
+                                                     onfocusout="{!c.adjustEntry}"
+                                                     disabled="{!day[0]}"
+                                                     step="0.25" min="0" max="24"/>
+                                </div>
+                            </div>
+                        </aura:iteration>
+                        <div class="entryColumn total">{!record.NonBillableTotal}</div>
+                    </div>
+                </div>
+            </div>
+        </aura:iteration>
+
+        <!-- NEW ENTRY ROW -->
+        <div class="timeGrid">
+            <div>
+                <input class="slds-input sldsInput" aura:id="codelistInput" id="codelistInput"  name="opportunityLookup"
+                       onchange="{!c.setRow}" placeholder="search codes..."/>
+                <datalist id="{!v.recordId}">
+                    <aura:iteration items="{!v.codes}" var="code">
+                        <option value="{!code.Name}">{!code.Name}</option>
+                    </aura:iteration>
+                </datalist>
+            </div>
+
+            <aura:iteration var="date" items="{!v.dates}">
+                <div class="entryColumn">
+                    <div class="inputColumn">
+                        <lightning:input type="number" value="" disabled="true" variant="label-hidden" class="sldsInput"/>
+                    </div>
+                </div>
+            </aura:iteration>
+
+        </div>
+    </div>
+
+</aura:component>
