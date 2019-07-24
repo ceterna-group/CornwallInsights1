@@ -6,8 +6,6 @@
     background-color: white;
     border-radius: 3px;
     border: 0.5px solid grey;
-
-
 }
 
 .THIS .timeGrid {
@@ -19,12 +17,37 @@
 
 .THIS .entryGrid {
     display: grid;
-    grid-template-columns: 30% 70%;
+    grid-template-columns: 25% 5% 70%;
     position: relative;
 }
 
 .THIS .codeName {
     font-size: 14px;
+}
+
+.THIS .expandIcon {
+    background-color: #dcdbdb;
+    border-radius: 3px;
+    font-size: 17px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 8px;
+    cursor: pointer;
+}
+
+.THIS .expandIconHide {
+    position: absolute;
+    background-color: white;
+    height: 100%;
+    width:100%;
+    z-index: 1;
+}
+
+.THIS .expandIcon:hover {
+    background-color: #cdcccc;
+
 }
 
 .THIS .recordValueRow {

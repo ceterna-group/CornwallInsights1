@@ -14,13 +14,14 @@
     <aura:attribute name="records" type="Object[]"/>
     <aura:attribute name="priorRecords" type="Object[]"/>
     <aura:attribute name="activeField" type="Object"/>
+    <aura:attribute name="billableDefault" type="Boolean"/>
     <aura:attribute name="responsePending" type="Boolean" default="false"/>
 
     <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
 
     <force:recordData aura:id="recordLoader"
                       recordId="{!v.recordId}"
-                      fields="Total_Entry_Time__c,Total_Non_Billable_Entry_Time__c"
+                      fields="Total_Entry_Time__c,Total_Non_Billable_Entry_Time__c,Billable_vs_Non_Billable_Layout_Render__c"
                       targetFields="{!v.timeSheet}"/>
 
     <div class="slds-panel slds-p-around--medium">
@@ -28,7 +29,7 @@
         <!-- TOTALS-->
         <div class="entryGrid valueRow totalRow">
             <div class="codeName">
-                <div>WEEK TOTAL</div>
+                <div>WEEK TOTAL </div>
                 <aura:if isTrue="{!v.priorRecords.length > 0}">
                     <lightning:button variant="brand" onclick="{!c.prefillEntries}">
                         PREFILL {!v.priorRecords.length} FROM PREVIOUS WEEK
@@ -36,6 +37,7 @@
                 </aura:if>
 
             </div>
+            <div></div>
             <div>
                 <div class="recordValueRow billOptions billable">
                     <div class="typeLabel">BILLABLE</div>
@@ -69,9 +71,20 @@
 
             <div class="entryGrid valueRow">
                 <div class="codeName">{!record.Name}</div>
+                <div style="position: relative;">
+                    <aura:if isTrue="{!not(record.NotBillable)}">
+                        <div class="expandIconHide"
+                             style="{!or(and(v.billableDefault,record.NonBillableTotal > 0),and(not(v.billableDefault),record.BillableTotal > 0)) ? '' : 'display:none'}"></div>
+                        <div class="expandIcon" onclick="{!c.expandRow}"
+                             style="{!not(and(record.ExpandBillable,record.ExpandNonBillable)) ? '' : 'transform: rotate(90deg)'}"
+                             data-name="{!record.Name}">
+                            &gt;
+                        </div>
+                    </aura:if>
+                </div>
                 <div>
                     <aura:if isTrue="{!not(record.NotBillable)}">
-                        <div class="recordValueRow billOptions billable">
+                        <div class="recordValueRow billOptions billable" style="{!or(record.ExpandBillable,v.billableDefault) ? '' : 'display:none'}">
                             <div class="typeLabel">BILLABLE</div>
                             <aura:iteration var="day" items="{!record.Entries}" indexVar="i">
                                 <div class="entryColumn">
@@ -90,7 +103,7 @@
                             <div class="entryColumn total">{!record.BillableTotal}</div>
                         </div>
                     </aura:if>
-                    <div class="recordValueRow billOptions">
+                    <div class="recordValueRow billOptions" style="{!record.ExpandNonBillable ? '' : 'display:none'}">
                         <div class="typeLabel">NON-BILLABLE</div>
                         <aura:iteration var="day" items="{!record.Entries}" indexVar="i">
                             <div class="entryColumn">

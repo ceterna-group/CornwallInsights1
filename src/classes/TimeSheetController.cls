@@ -10,7 +10,8 @@ public class TimeSheetController {
         // declare response map object to be returned to jsController
         Map<String,Object> responseMap = new Map<String,Object>();
 
-        Time_Sheet__c sheet = [SELECT Id, Week__c, CreatedById, Prefilled__c FROM Time_Sheet__c WHERE Id = :recordId];
+        Time_Sheet__c sheet = [SELECT Id, Week__c, CreatedById, Prefilled__c, Billable_vs_Non_Billable_Layout_Render__c
+                                FROM Time_Sheet__c WHERE Id = :recordId];
 
         // generate dates for each day of the week, commencing with the start date (Monday) on the time sheet
         List<Date> dates            = new List<Date>();
@@ -24,6 +25,7 @@ public class TimeSheetController {
 
         responseMap.put('dates',dates);
         responseMap.put('blockedDates',blockedDates);
+        responseMap.put('billableDefault',sheet.Billable_vs_Non_Billable_Layout_Render__c);
 
         // isolate ids of codes already used in existing time sheet entries
         Set<Id> usedCodes = new Set<Id>();
@@ -46,14 +48,14 @@ public class TimeSheetController {
             if (!entryMap.containsKey(codeKey)){
                 List<List<Object>> days = new List<List<Object>>();
                 for (Integer x = 0; x < 5; x++){
-                    days.add(new List<Object>{blockedDates[x],null,null});
+                    days.add(new List<Object>{blockedDates[x],'',''});
                 }
                 entryMap.put(codeKey,days);
             }
 
             // add the relevant amount to the map
             if (entry.Quantity_Number__c != null){
-                if (entryMap.get(codeKey)[sheet.Week__c.daysBetween(entry.Day_of_the_Week__c)][index] == null){
+                if (entryMap.get(codeKey)[sheet.Week__c.daysBetween(entry.Day_of_the_Week__c)][index] == ''){
                     entryMap.get(codeKey)[sheet.Week__c.daysBetween(entry.Day_of_the_Week__c)][index] = entry.Quantity_Number__c;
                 } else {
                     Decimal value = (Decimal)entryMap.get(codeKey)[sheet.Week__c.daysBetween(entry.Day_of_the_Week__c)][index];
@@ -82,7 +84,7 @@ public class TimeSheetController {
             if (!priorEntryMap.containsKey(codeKey)){
                 List<List<Object>> days = new List<List<Object>>();
                 for (Integer x = 0; x < 5; x++){
-                    days.add(new List<Object>{blockedDates[x],null,null});
+                    days.add(new List<Object>{blockedDates[x],'',''});
                 }
                 priorEntryMap.put(codeKey,days);
             }

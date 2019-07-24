@@ -5,10 +5,6 @@
 ({
     doInit : function($C,$E,$H){
 
-        // console.log($C.get('v.recordId'));
-        // location.reload();
-
-        // $H.refreshAttributes($C,$E);
         var recordsCall = $C.get('c.getRecords');
         recordsCall.setParams({
             recordId : $C.get('v.recordId')
@@ -17,6 +13,10 @@
             if (response.getState() === "SUCCESS"){
 
                 console.log(response.getReturnValue());
+
+                var timesheet = $C.get('v.timeSheet');
+
+                console.log(timesheet);
 
                 var responseData = response.getReturnValue();
 
@@ -31,8 +31,12 @@
                 $C.set('v.dates',dates);
                 $C.set('v.blockedDates',responseData['blockedDates']);
                 $C.set('v.codes',responseData['codes']);
+                $C.set('v.billableDefault',responseData['billableDefault']);
 
                 var records         = [];
+                var billDefault     = $C.get('v.billableDefault');
+
+                console.log('bill default is ' + billDefault);
 
                 Object.keys(responseData['existingRecords']).forEach(function(record){
                     var recordInfo          = record.split('::');
@@ -47,10 +51,12 @@
                     records.push({
                         Name : recordInfo[0],
                         Id: recordInfo[1],
-                        NotBillable : recordInfo[2],
+                        NotBillable : recordInfo[2] === 'true',
                         Entries : responseData['existingRecords'][record],
                         BillableTotal : billableTotal,
-                        NonBillableTotal : nonBillableTotal
+                        NonBillableTotal : nonBillableTotal,
+                        ExpandBillable : billDefault || billableTotal > 0,
+                        ExpandNonBillable : !billDefault || nonBillableTotal > 0 || recordInfo[2] === 'true'
                     });
 
                     for (var x = 0; x < responseData['existingRecords'][record].length; x++){
@@ -68,10 +74,12 @@
                     priorRecords.push({
                         Name : priorRecordInfo[0],
                         Id: priorRecordInfo[1],
-                        NotBillable : priorRecordInfo[2],
+                        NotBillable : priorRecordInfo[2] === 'true',
                         Entries : responseData['priorRecords'][record],
                         BillableTotal : 0,
-                        NonBillableTotal : 0
+                        NonBillableTotal : 0,
+                        ExpandBillable : billDefault,
+                        ExpandNonBillable : !billDefault || priorRecordInfo[2] === 'true'
                     });
                 });
 
@@ -109,10 +117,14 @@
 
         var code = $C.find('codelistInput').getElement().value;
 
+        console.log(code);
+
         if (code){
-            var codeList    = $C.get('v.codes');
-            var codeId      = '';
-            var notBillable = false;
+            var codeList        = $C.get('v.codes');
+            var codeId          = '';
+            var notBillable     = false;
+            var billDefault     = $C.get('v.billableDefault');
+
             for (var x = 0; x< codeList.length; x++){
                 if (codeList[x].Name === code){
                     codeId      = codeList[x].Id;
@@ -127,20 +139,25 @@
                     priorRecords.splice(x,1);
                 }
             }
-            $C.set('v.priorRecords',priorRecords);
 
+            $C.set('v.priorRecords',priorRecords);
             $C.find('codelistInput').getElement().value = '';
-            var blockedDates = $C.get('v.blockedDates');
-            var records = $C.get('v.records');
+
+            var blockedDates    = $C.get('v.blockedDates');
+            var records         = $C.get('v.records');
+
             records.push({
                 Name : code,
                 Id : codeId,
                 NotBillable : notBillable,
-                Entries : [[blockedDates[0],null,null],[blockedDates[1],null,null],[blockedDates[2],null,null],
-                    [blockedDates[3],null,null],[blockedDates[4],null,null]],
+                Entries : [[blockedDates[0],'',''],[blockedDates[1],'',''],[blockedDates[2],'',''],
+                    [blockedDates[3],'',''],[blockedDates[4],'','']],
                 BillableTotal : 0,
-                NonBillableTotal : 0
+                NonBillableTotal : 0,
+                ExpandBillable : billDefault && !notBillable,
+                ExpandNonBillable : !billDefault || notBillable
             });
+
             $C.set('v.records',records);
         }
 
@@ -162,9 +179,6 @@
                 OriginalAmount : fieldInfo[3],
                 RecordIndex : fieldInfo[4]
             });
-
-            console.log(Object.keys($C.get('v.activeField')));
-            console.log(Object.values($C.get('v.activeField')));
         }
     },
     adjustEntry : function($C,$E,$H){
@@ -209,5 +223,23 @@
             });
             $A.enqueueAction(recordUpdate);
         }
+    },
+    expandRow : function ($C,$E,$H) {
+
+        var recordName  = $E.currentTarget.dataset.name;
+        var records     = $C.get('v.records');
+        var billDefault = $C.get('v.billableDefault');
+
+        records.forEach(function(record){
+            if (record.Name === recordName){
+                if (billDefault){
+                    record.ExpandNonBillable = !record.ExpandNonBillable;
+                } else {
+                    record.ExpandBillable = !record.ExpandBillable;
+                }
+            }
+        });
+
+        $C.set('v.records',records);
     }
 });
