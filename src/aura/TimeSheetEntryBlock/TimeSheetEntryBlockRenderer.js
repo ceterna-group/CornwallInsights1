@@ -7,7 +7,7 @@
     afterRender : function($C,$H) {
         var listInputCmp    = $C.find("codelistInput");
         var listInput       = listInputCmp.getElement();
-        // listInput.setAttribute("list", "codelist");
+        // listInput.setAttribute("list", "mylist");
         listInput.setAttribute("list", $C.get('v.recordId'));
         //
         // console.log('superAfterRender fired');
