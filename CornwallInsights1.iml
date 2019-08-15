@@ -29,6 +29,10 @@
                       <option name="entries">
                         <list>
                           <MetadataEntry>
+                            <option name="name" value="JournalGenerator" />
+                            <option name="selected" value="true" />
+                          </MetadataEntry>
+                          <MetadataEntry>
                             <option name="name" value="TimeSheetController" />
                             <option name="selected" value="true" />
                           </MetadataEntry>
