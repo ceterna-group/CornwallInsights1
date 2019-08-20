@@ -13,7 +13,7 @@ public class JournalGenerator {
     public Boolean ValidParams;
 
     // create header journal and journal lines for consulting opportunities
-    public void buildConsultingJournal(){
+    public Id buildConsultingJournal(){
 
         String journalName  = 'Cornwall Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
@@ -23,48 +23,86 @@ public class JournalGenerator {
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
-        // get Opportunities of record type 'Milestone Opportunity' which have a 'Consluting' opportunity parent
+        // get Opportunities of record type 'Milestone Opportunity' which have a 'Consulting' opportunity parent
         // and a CloseDate which falls inside the month
         List<Opportunity> billableMilestones =
-                                    [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__c, Amount
+                                    [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
+                                            Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
+                                            Parent_Opportunity__r.CI_Code__c, Amount
                                      FROM Opportunity
                                      WHERE StageName = 'Closed Won'
                                      AND RecordTypeId = :recordTypeId
                                      AND Parent_Opportunity__r.RecordTypeId = :consultingId
+                                     AND Parent_Opportunity__r.CI_Code__c != NULL
                                      AND CloseDate >= :StartDate
                                      AND CloseDate <= :EndDate];
 
+        // get a set of all ci codes
+        Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
+
+        for (Opportunity opp : billableMilestones){
+            if (opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c == null){
+                ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
+                        new c2g__codaDimension3__c(
+                                Name                  = opp.Parent_Opportunity__r.CI_Code__r.Name,
+                                c2g__ReportingCode__c = opp.Parent_Opportunity__r.CI_Code__r.Name.length() > 24 ?
+                                                        opp.Parent_Opportunity__r.CI_Code__r.Name.substring(0,23) :
+                                                        opp.Parent_Opportunity__r.CI_Code__r.Name,
+                                CurrencyIsoCode       = 'GBP'
+                ));
+            }
+        }
+
+        insert ciCodeDimensionMap.values();
+
+        for (String ciCodeId : ciCodeDimensionMap.keySet()){
+            codesToUpdate.add(new CI_Code__c(
+                Id = ciCodeId,
+                Dimension_3__c = ciCodeDimensionMap.get(ciCodeId).Id
+            ));
+        }
+
+        update codesToUpdate;
 
         // get ids of the relevant general ledger accounts
         String workInProgressId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                    WHERE Name = '4201 - Sales - Consultancy Energy Generation - Work In Progress'].Id;
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                    WHERE Name = '2201 - Deferred income - Consultancy'].Id;
-
+        String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Consultancy' LIMIT 1].Id;
+        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
         for (Opportunity opp : billableMilestones){
-            if (opp.Parent_Opportunity__r.CI_Code__c != null){
-                for (Integer x = 0; x < 2; x++){
-                    c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
-                    line.c2g__Journal__c                = journalHeader;
-                    line.c2g__LineType__c               = 'General Ledger Account';
-                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                    line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
-                    line.c2g__LineDescription__c        = journalName;
-                    line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
-                    lineItems.add(line);
-                }
 
-                opp.JournalId__c = journalHeader;
+            String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
+                                  opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
+                                  ciCodeDimensionMap.get(opp.Parent_Opportunity__r.CI_Code__c).Id;
+
+            for (Integer x = 0; x < 2; x++){
+                c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
+                line.c2g__Journal__c                = journalHeader;
+                line.c2g__LineType__c               = 'General Ledger Account';
+                line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
+                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
+                line.c2g__LineDescription__c        = journalName;
+                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
+                line.c2g__Dimension1__c             = dimension1Id;
+                line.c2g__Dimension2__c             = dimension2Id;
+                line.c2g__Dimension3__c             = dimension3Id;
+                lineItems.add(line);
             }
+
+            opp.JournalId__c = journalHeader;
         }
 
         insert lineItems;
         update billableMilestones;
+        return journalHeader;
     }
 
-    public void buildBespokeTrainingJournal(){
+    public Id buildBespokeTrainingJournal(){
 
         String journalName  = 'Cornwall Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
@@ -77,7 +115,9 @@ public class JournalGenerator {
         // get Opportunities of record type 'Milestone Opportunity' which have a 'Bespoke Training' opportunity parent
         // and a CloseDate which falls inside the month
         List<Opportunity> billableMilestones =
-                                [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__c, Amount
+                                [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
+                                        Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
+                                        Parent_Opportunity__r.CI_Code__c, Amount
                                 FROM Opportunity
                                 WHERE StageName = 'Closed Won'
                                 AND RecordTypeId = :recordTypeId
@@ -85,57 +125,244 @@ public class JournalGenerator {
                                 AND CloseDate >= :StartDate
                                 AND CloseDate <= :EndDate];
 
+        // get a set of all ci codes
+        Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
+
+        for (Opportunity opp : billableMilestones){
+            if (opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c == null){
+                ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
+                    new c2g__codaDimension3__c(
+                        Name                    = opp.Parent_Opportunity__r.CI_Code__r.Name,
+                        c2g__ReportingCode__c   = opp.Parent_Opportunity__r.CI_Code__r.Name.length() > 24 ?
+                                                  opp.Parent_Opportunity__r.CI_Code__r.Name.substring(0,23) :
+                                                  opp.Parent_Opportunity__r.CI_Code__r.Name,
+                        CurrencyIsoCode         = 'GBP'
+                    ));
+            }
+        }
+
+        insert ciCodeDimensionMap.values();
+
+        for (String ciCodeId : ciCodeDimensionMap.keySet()){
+            codesToUpdate.add(new CI_Code__c(
+                    Id              = ciCodeId,
+                    Dimension_3__c  = ciCodeDimensionMap.get(ciCodeId).Id
+            ));
+        }
+
+        update codesToUpdate;
+
         // get ids of the relevant general ledger accounts
         String workInProgressId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
-        WHERE Name = '4302 - Sales - Bespoke Training'].Id;
+                                    WHERE Name = '4302 - Sales - Bespoke Training'].Id;
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
-        WHERE Name = '2203 - Deferred Income - Bespoke Training'].Id;
+                                    WHERE Name = '2203 - Deferred Income - Bespoke Training'].Id;
+        String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Training' LIMIT 1].Id;
+        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
         for (Opportunity opp : billableMilestones){
-            if (opp.Parent_Opportunity__r.CI_Code__c != null){
-                for (Integer x = 0; x < 2; x++){
-                    c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
-                    line.c2g__Journal__c                = journalHeader;
-                    line.c2g__LineType__c               = 'General Ledger Account';
-                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                    line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
-                    line.c2g__LineDescription__c        = journalName;
-                    line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
-                    lineItems.add(line);
-                }
+            String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
+                    opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
+                    ciCodeDimensionMap.get(opp.Parent_Opportunity__r.CI_Code__c).Id;
 
-                opp.JournalId__c = journalHeader;
+            for (Integer x = 0; x < 2; x++){
+                c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
+                line.c2g__Journal__c                = journalHeader;
+                line.c2g__LineType__c               = 'General Ledger Account';
+                line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
+                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
+                line.c2g__LineDescription__c        = journalName;
+                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
+                line.c2g__Dimension1__c             = dimension1Id;
+                line.c2g__Dimension2__c             = dimension2Id;
+                line.c2g__Dimension3__c             = dimension3Id;
+                lineItems.add(line);
             }
+
+            opp.JournalId__c = journalHeader;
         }
 
         insert lineItems;
         update billableMilestones;
+        return journalHeader;
+
     }
 
 
     public String buildPublicTrainingJournal(){
 
+        String journalName  = 'Cornwall Public Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        Id journalHeader    = getHeaderId(journalName);
+        Id publicTrainingId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Public').getRecordTypeId();
 
-        // i want a list of training attendees where session date falls in the last month
-        // parent opp is closed won
+        // declare map of opportunity ids to corresponding journals
+        List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
 
+        List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, Session__r.CI_Code__c, Session__r.CI_Code__r.Dimension3Id__c,
+                                                                Session__r.CI_Code__r.Name, Subscription_Duration__c
+                                                        FROM OpportunityLineItem
+                                                        WHERE Opportunity.StageName = 'Closed Won'
+                                                        AND Opportunity.RecordTypeId = :publicTrainingId
+                                                        AND Session__r.CI_Code__c != NULL
+                                                        AND Session__r.EndDate >= :StartDate
+                                                        AND Session__r.EndDate <= :EndDate];
+
+        // get a set of all ci codes
+        Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
+
+        for (OpportunityLineItem lineItem : subscriptionItems){
+            if (lineItem.Session__r.CI_Code__r.Dimension3Id__c == null){
+                ciCodeDimensionMap.put(lineItem.Session__r.CI_Code__c,
+                        new c2g__codaDimension3__c(
+                                Name                    = lineItem.Session__r.CI_Code__r.Name,
+                                c2g__ReportingCode__c   = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
+                                        lineItem.Session__r.CI_Code__r.Name.substring(0,23) :
+                                        lineItem.Session__r.CI_Code__r.Name,
+                                CurrencyIsoCode         = 'GBP'
+                        ));
+            }
+        }
+
+        insert ciCodeDimensionMap.values();
+
+        for (String ciCodeId : ciCodeDimensionMap.keySet()){
+            codesToUpdate.add(new CI_Code__c(
+                    Id              = ciCodeId,
+                    Dimension_3__c  = ciCodeDimensionMap.get(ciCodeId).Id
+            ));
+        }
+
+        update codesToUpdate;
+
+        // get ids of the relevant general ledger accounts
+        String salesId          = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
+                                    WHERE Name = '4300 - Sales - Public Training'].Id;
+        String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
+                                    WHERE Name = '2202 - Deferred Income - Public Training'].Id;
+        String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Training' LIMIT 1].Id;
+        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
+
+        // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
+        for (OpportunityLineItem lineItem : subscriptionItems){
+            String dimension3Id = lineItem.Session__r.CI_Code__r.Dimension3Id__c != null ?
+                    lineItem.Session__r.CI_Code__r.Dimension3Id__c :
+                    ciCodeDimensionMap.get(lineItem.Session__r.CI_Code__c).Id;
+
+            Decimal value = lineItem.TotalPrice;
+
+            for (Integer x = 0; x < 2; x++){
+                c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
+                line.c2g__Journal__c                = journalHeader;
+                line.c2g__LineType__c               = 'General Ledger Account';
+                line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
+                line.c2g__Value__c                  = x == 0 ? value : (value * -1);
+                line.c2g__LineDescription__c        = journalName;
+                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
+                line.c2g__Dimension1__c             = dimension1Id;
+                line.c2g__Dimension2__c             = dimension2Id;
+                line.c2g__Dimension3__c             = dimension3Id;
+                lineItems.add(line);
+            }
+
+            lineItem.JournalId__c = journalHeader;
+        }
+
+        insert lineItems;
+        update subscriptionItems;
+
+        return journalHeader;
 
 
-        return null;
     }
 
 
     public String buildSubscriptionJournal(){
 
 
-        // i want a list of Opportunity product lines  where record type is '')
-        // and parent record type id is 'Training Bespoke'
-        // and Course date falls in range (NOT CloseDate)
+        String journalName  = 'Cornwall Subscription Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        Id journalHeader    = getHeaderId(journalName);
+        Id subscriptionId   = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Core').getRecordTypeId();
+
+        // declare map of opportunity ids to corresponding journals
+        List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
 
-        return null;
+        List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, AmountRecognised__c, AmountRemaining__c,
+                                                              Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
+                                                              Product2.CI_Code__r.Name, Subscription_Duration__c
+                                                       FROM OpportunityLineItem
+                                                       WHERE Opportunity.StageName = 'Closed Won'
+                                                       AND Opportunity.RecordTypeId = :subscriptionId
+                                                       AND Product2.CI_Code__c != NULL
+                                                       AND AmountRemaining__c > 0];
+
+        // get a set of all ci codes
+        Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
+
+        for (OpportunityLineItem lineItem : subscriptionItems){
+            if (lineItem.Product2.CI_Code__r.Dimension3Id__c == null){
+                ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
+                        new c2g__codaDimension3__c(
+                                Name                    = lineItem.Product2.CI_Code__r.Name,
+                                c2g__ReportingCode__c   = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
+                                                          lineItem.Product2.CI_Code__r.Name.substring(0,23) :
+                                                          lineItem.Product2.CI_Code__r.Name,
+                                CurrencyIsoCode         = 'GBP'
+                        ));
+            }
+        }
+
+        insert ciCodeDimensionMap.values();
+
+        for (String ciCodeId : ciCodeDimensionMap.keySet()){
+            codesToUpdate.add(new CI_Code__c(
+                    Id              = ciCodeId,
+                    Dimension_3__c  = ciCodeDimensionMap.get(ciCodeId).Id
+            ));
+        }
+
+        update codesToUpdate;
+
+        // get ids of the relevant general ledger accounts
+        String salesId          = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
+                                    WHERE Name = '4000 - Sales - Energy Spectrum - Single User'].Id;
+        String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
+                                    WHERE Name = '2200 - Deferred Income - Subscriptions'].Id;
+        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
+
+        // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
+        for (OpportunityLineItem lineItem : subscriptionItems){
+            String dimension3Id = lineItem.Product2.CI_Code__r.Dimension3Id__c != null ?
+                    lineItem.Product2.CI_Code__r.Dimension3Id__c :
+                    ciCodeDimensionMap.get(lineItem.Product2.CI_Code__c).Id;
+
+            Decimal value = (lineItem.TotalPrice / lineItem.Subscription_Duration__c);
+
+            for (Integer x = 0; x < 2; x++){
+                c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
+                line.c2g__Journal__c                = journalHeader;
+                line.c2g__LineType__c               = 'General Ledger Account';
+                line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
+                line.c2g__Value__c                  = x == 0 ? value : (value * -1);
+                line.c2g__LineDescription__c        = journalName;
+                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
+                line.c2g__Dimension2__c             = dimension2Id;
+                line.c2g__Dimension3__c             = dimension3Id;
+                lineItems.add(line);
+            }
+
+            lineItem.AmountRecognised__c += value;
+        }
+
+        insert lineItems;
+        update subscriptionItems;
+
+        return journalHeader;
     }
 
 
@@ -166,7 +393,6 @@ public class JournalGenerator {
                                    [SELECT Id FROM c2g__codaAccountingCurrency__c
                                     WHERE CurrencyIsoCode = 'GBP'
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
-
 
         if (CompanyName != null && !periods.isEmpty() && !currencies.isEmpty()){
             PeriodId    = periods[0].Id;

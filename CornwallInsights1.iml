@@ -33,6 +33,10 @@
                             <option name="selected" value="true" />
                           </MetadataEntry>
                           <MetadataEntry>
+                            <option name="name" value="JournalTestPanelController" />
+                            <option name="selected" value="true" />
+                          </MetadataEntry>
+                          <MetadataEntry>
                             <option name="name" value="TimeSheetController" />
                             <option name="selected" value="true" />
                           </MetadataEntry>
@@ -148,6 +152,10 @@
                     <MetadataType>
                       <option name="entries">
                         <list>
+                          <MetadataEntry>
+                            <option name="name" value="JournalTestPanel" />
+                            <option name="selected" value="true" />
+                          </MetadataEntry>
                           <MetadataEntry>
                             <option name="name" value="TimeSheetEntryBlock" />
                             <option name="selected" value="true" />

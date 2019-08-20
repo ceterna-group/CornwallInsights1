@@ -1,0 +1,49 @@
+<!--
+ - Created by ronanwilliams on 2019-08-20.
+ -->
+
+<aura:component description="JournalTestPanel" controller="JournalTestPanelController" implements="flexipage:availableForAllPageTypes">
+
+    <aura:attribute name="executions" type="Object[]"/>
+    <aura:attribute name="dates" type="Object[]"/>
+    <aura:attribute name="responsePending" type="Boolean" default="false"/>
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <div class="slds-panel slds-p-around--medium">
+        <div style="display: flex;margin-bottom: 10px; width:100%; border-bottom: 0.5px solid grey;padding-bottom: 5px;">
+            <div>
+                <lightning:button label="GENERATE JOURNALS" onclick="{!c.generateJournals}"
+                                  disabled="{!v.responsePending}" variant="brand"/>
+            </div>
+            <div style="padding-left: 10px">
+                <lightning:select variant="label-hidden" label="" aura:id="date" class="label-hidden"
+                                  disabled="{!v.responsePending}">
+                    <aura:iteration items="{!v.dates}" var="date" >
+                        <option value="{!date}">{!date}</option>
+                    </aura:iteration>
+                </lightning:select>
+            </div>
+        </div>
+
+        <div style="padding: 5px;position: relative;min-height: 50px;margin-bottom:5px;">
+            <aura:if isTrue="{!v.responsePending}">
+                <lightning:spinner />
+            </aura:if>
+            <aura:iteration items="{!v.executions}" var="execution" indexVar="index">
+                <div class="execution">
+                    <div style="font-weight: bold">{!(index + 1) + ': ' + execution.name}</div>
+                    <aura:if isTrue="{!execution.error}">
+                        <div>{!execution.error}</div>
+                    </aura:if>
+                    <aura:if isTrue="{!execution.journals}">
+                        <div><a href="{!'/' + execution.journals[0].Id}" target="_blank">{!execution.journals[0].c2g__JournalDescription__c}</a></div>
+                        <div><a href="{!'/' + execution.journals[1].Id}" target="_blank">{!execution.journals[1].c2g__JournalDescription__c}</a></div>
+                        <div><a href="{!'/' + execution.journals[2].Id}" target="_blank">{!execution.journals[2].c2g__JournalDescription__c}</a></div>
+                        <div><a href="{!'/' + execution.journals[3].Id}" target="_blank">{!execution.journals[3].c2g__JournalDescription__c}</a></div>
+                    </aura:if>
+                </div>
+            </aura:iteration>
+        </div>
+    </div>
+</aura:component>
