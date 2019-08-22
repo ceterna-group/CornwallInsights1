@@ -37,10 +37,30 @@
                         <div>{!execution.error}</div>
                     </aura:if>
                     <aura:if isTrue="{!execution.journals}">
-                        <div><a href="{!'/' + execution.journals[0].Id}" target="_blank">{!execution.journals[0].c2g__JournalDescription__c}</a></div>
-                        <div><a href="{!'/' + execution.journals[1].Id}" target="_blank">{!execution.journals[1].c2g__JournalDescription__c}</a></div>
-                        <div><a href="{!'/' + execution.journals[2].Id}" target="_blank">{!execution.journals[2].c2g__JournalDescription__c}</a></div>
-                        <div><a href="{!'/' + execution.journals[3].Id}" target="_blank">{!execution.journals[3].c2g__JournalDescription__c}</a></div>
+                        <div>
+                            <a href="{!'/' + execution.journals[0].Id}" target="_blank">
+                                {!execution.journals[0].c2g__JournalDescription__c + ' (' +
+                                (execution.journals[0].c2g__JournalLineItems__r ? execution.journals[0].c2g__JournalLineItems__r.length : '0') + ' lines)'}
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{!'/' + execution.journals[1].Id}" target="_blank">
+                                {!execution.journals[1].c2g__JournalDescription__c + ' (' +
+                                (execution.journals[1].c2g__JournalLineItems__r ? execution.journals[1].c2g__JournalLineItems__r.length : '0') + ' lines)'}
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{!'/' + execution.journals[2].Id}" target="_blank">
+                                {!execution.journals[2].c2g__JournalDescription__c + ' (' +
+                                (execution.journals[2].c2g__JournalLineItems__r ? execution.journals[2].c2g__JournalLineItems__r.length : '0') + ' lines)'}
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{!'/' + execution.journals[3].Id}" target="_blank">
+                                {!execution.journals[3].c2g__JournalDescription__c + ' (' +
+                                (execution.journals[3].c2g__JournalLineItems__r ? execution.journals[3].c2g__JournalLineItems__r.length : '0') + ' lines)'}
+                            </a>
+                        </div>
                     </aura:if>
                 </div>
             </aura:iteration>

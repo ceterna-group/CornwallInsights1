@@ -18,7 +18,8 @@ public class JournalTestPanelController {
             journalIds.add(generator.buildSubscriptionJournal());
             journalIds.add(generator.buildPublicTrainingJournal());
 
-            List<c2g__codaJournal__c> journals = [SELECT Id, Name, c2g__JournalDescription__c, c2g__Period__c
+            List<c2g__codaJournal__c> journals = [SELECT Id, Name, c2g__JournalDescription__c, c2g__Period__c,
+                                                        (SELECT Id FROM c2g__JournalLineItems__r)
                                                     FROM c2g__codaJournal__c WHERE Id IN :journalIds];
 
             responseMap.put('journals',journals);

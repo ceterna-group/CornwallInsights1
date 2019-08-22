@@ -35,7 +35,8 @@ public class JournalGenerator {
                                      AND Parent_Opportunity__r.RecordTypeId = :consultingId
                                      AND Parent_Opportunity__r.CI_Code__c != NULL
                                      AND CloseDate >= :StartDate
-                                     AND CloseDate <= :EndDate];
+                                     AND CloseDate <= :EndDate
+                                     AND Amount != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -123,7 +124,8 @@ public class JournalGenerator {
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
                                 AND CloseDate >= :StartDate
-                                AND CloseDate <= :EndDate];
+                                AND CloseDate <= :EndDate
+                                AND Amount != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -208,7 +210,8 @@ public class JournalGenerator {
                                                         AND Opportunity.RecordTypeId = :publicTrainingId
                                                         AND Session__r.CI_Code__c != NULL
                                                         AND Session__r.EndDate >= :StartDate
-                                                        AND Session__r.EndDate <= :EndDate];
+                                                        AND Session__r.EndDate <= :EndDate
+                                                        AND TotalPrice != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -293,12 +296,15 @@ public class JournalGenerator {
 
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, AmountRecognised__c, AmountRemaining__c,
                                                               Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
-                                                              Product2.CI_Code__r.Name, Subscription_Duration__c
+                                                              Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate
                                                        FROM OpportunityLineItem
                                                        WHERE Opportunity.StageName = 'Closed Won'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
+                                                       AND ServiceDate <= :EndDate
                                                        AND Product2.CI_Code__c != NULL
-                                                       AND AmountRemaining__c > 0];
+                                                       AND AmountRemaining__c > 0
+                                                       AND TotalPrice != NULL
+                                                       AND Subscription_Duration__c != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -341,7 +347,11 @@ public class JournalGenerator {
                     lineItem.Product2.CI_Code__r.Dimension3Id__c :
                     ciCodeDimensionMap.get(lineItem.Product2.CI_Code__c).Id;
 
-            Decimal value = (lineItem.TotalPrice / lineItem.Subscription_Duration__c);
+            Decimal value = (lineItem.TotalPrice / lineItem.Subscription_Duration__c).setScale(2);
+
+            if (lineItem.AmountRecognised__c == null){
+                lineItem.AmountRecognised__c = 0;
+            }
 
             for (Integer x = 0; x < 2; x++){
                 c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
@@ -356,7 +366,10 @@ public class JournalGenerator {
                 lineItems.add(line);
             }
 
-            lineItem.AmountRecognised__c += value;
+            if (Label.JournalMode != 'TEST'){
+                lineItem.AmountRecognised__c += value;
+            }
+
         }
 
         insert lineItems;
