@@ -28,15 +28,16 @@ public class JournalGenerator {
         List<Opportunity> billableMilestones =
                                     [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
                                             Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
-                                            Parent_Opportunity__r.CI_Code__c, Amount
+                                            Parent_Opportunity__r.CI_Code__c, Amount, Invoice_Amount__c,
+                                            Parent_Opportunity__r.Project_Code__c
                                      FROM Opportunity
-                                     WHERE StageName = 'Closed Won'
+                                     WHERE StageName = 'Closed - Complete'
                                      AND RecordTypeId = :recordTypeId
                                      AND Parent_Opportunity__r.RecordTypeId = :consultingId
                                      AND Parent_Opportunity__r.CI_Code__c != NULL
                                      AND CloseDate >= :StartDate
                                      AND CloseDate <= :EndDate
-                                     AND Amount != NULL];
+                                     AND Invoice_Amount__c != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -47,9 +48,7 @@ public class JournalGenerator {
                 ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
                         new c2g__codaDimension3__c(
                                 Name                  = opp.Parent_Opportunity__r.CI_Code__r.Name,
-                                c2g__ReportingCode__c = opp.Parent_Opportunity__r.CI_Code__r.Name.length() > 24 ?
-                                                        opp.Parent_Opportunity__r.CI_Code__r.Name.substring(0,23) :
-                                                        opp.Parent_Opportunity__r.CI_Code__r.Name,
+                                c2g__ReportingCode__c = opp.Parent_Opportunity__r.Project_Code__c,
                                 CurrencyIsoCode       = 'GBP'
                 ));
             }
@@ -86,7 +85,7 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
+                line.c2g__Value__c                  = x == 0 ? opp.Invoice_Amount__c : (opp.Invoice_Amount__c * -1);
                 line.c2g__LineDescription__c        = journalName;
                 line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__Dimension1__c             = dimension1Id;
@@ -118,9 +117,10 @@ public class JournalGenerator {
         List<Opportunity> billableMilestones =
                                 [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
                                         Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
-                                        Parent_Opportunity__r.CI_Code__c, Amount
+                                        Parent_Opportunity__r.CI_Code__c, Amount, Total_Billable_Amount__c,
+                                        Parent_Opportunity__r.Project_Code__c
                                 FROM Opportunity
-                                WHERE StageName = 'Closed Won'
+                                WHERE StageName = 'Closed - Complete'
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
                                 AND CloseDate >= :StartDate
@@ -136,9 +136,7 @@ public class JournalGenerator {
                 ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
                     new c2g__codaDimension3__c(
                         Name                    = opp.Parent_Opportunity__r.CI_Code__r.Name,
-                        c2g__ReportingCode__c   = opp.Parent_Opportunity__r.CI_Code__r.Name.length() > 24 ?
-                                                  opp.Parent_Opportunity__r.CI_Code__r.Name.substring(0,23) :
-                                                  opp.Parent_Opportunity__r.CI_Code__r.Name,
+                        c2g__ReportingCode__c   = opp.Parent_Opportunity__r.Project_Code__c,
                         CurrencyIsoCode         = 'GBP'
                     ));
             }
@@ -174,7 +172,7 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
+                line.c2g__Value__c                  = x == 0 ? opp.Total_Billable_Amount__c : (opp.Total_Billable_Amount__c * -1);
                 line.c2g__LineDescription__c        = journalName;
                 line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__Dimension1__c             = dimension1Id;
@@ -203,19 +201,25 @@ public class JournalGenerator {
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
 
-        List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, Session__r.CI_Code__c, Session__r.CI_Code__r.Dimension3Id__c,
+        List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, Session__r.CI_Code__c,
+                                                                Session__r.CI_Code__r.Dimension3Id__c,
                                                                 Session__r.CI_Code__r.Name, Subscription_Duration__c
                                                         FROM OpportunityLineItem
-                                                        WHERE Opportunity.StageName = 'Closed Won'
+                                                        WHERE Opportunity.IsClosed = TRUE
+                                                        AND Opportunity.StageName != 'Closed Lost'
+                                                        AND Opportunity.StageName != 'Closed - No Bid'
                                                         AND Opportunity.RecordTypeId = :publicTrainingId
                                                         AND Session__r.CI_Code__c != NULL
-                                                        AND Session__r.EndDate >= :StartDate
-                                                        AND Session__r.EndDate <= :EndDate
+                                                        AND Session__r.End_Date_Time__c >= :StartDate
+                                                        AND Session__r.End_Date_Time__c <= :EndDate
                                                         AND TotalPrice != NULL];
+
+
+        System.debug('records found is ' + subscriptionItems.size());
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
-        List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
+        List<CI_Code__c> codesToUpdate  = new List<CI_Code__c>();
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Session__r.CI_Code__r.Dimension3Id__c == null){
@@ -298,7 +302,9 @@ public class JournalGenerator {
                                                               Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
                                                               Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate
                                                        FROM OpportunityLineItem
-                                                       WHERE Opportunity.StageName = 'Closed Won'
+                                                       WHERE Opportunity.IsClosed = TRUE
+                                                       AND Opportunity.StageName != 'Closed Lost'
+                                                       AND Opportunity.StageName != 'Closed - No Bid'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
                                                        AND ServiceDate <= :EndDate
                                                        AND Product2.CI_Code__c != NULL
