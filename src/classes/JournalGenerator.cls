@@ -11,6 +11,7 @@ public class JournalGenerator {
     private String CurrencyId;
     private String CompanyName;
     public Boolean ValidParams;
+    public Map<String,String> Dimension2Map;
 
     // create header journal and journal lines for consulting opportunities
     public Id buildConsultingJournal(){
@@ -29,15 +30,16 @@ public class JournalGenerator {
                                     [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
                                             Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
                                             Parent_Opportunity__r.CI_Code__c, Amount, Invoice_Amount__c,
-                                            Parent_Opportunity__r.Project_Code__c
+                                            Parent_Opportunity__r.Project_Code__c, Parent_Opportunity__r.Owner.Company__c
                                      FROM Opportunity
                                      WHERE StageName = 'Closed - Complete'
                                      AND RecordTypeId = :recordTypeId
                                      AND Parent_Opportunity__r.RecordTypeId = :consultingId
                                      AND Parent_Opportunity__r.CI_Code__c != NULL
+                                     AND Owner.CompanyName = :CompanyName
                                      AND CloseDate >= :StartDate
                                      AND CloseDate <= :EndDate
-                                     AND Invoice_Amount__c != NULL];
+                                     AND Amount != NULL];
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -71,10 +73,12 @@ public class JournalGenerator {
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                    WHERE Name = '2201 - Deferred income - Consultancy'].Id;
         String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Consultancy' LIMIT 1].Id;
-        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
         for (Opportunity opp : billableMilestones){
+
+            String dimension2Id = Dimension2Map.containsKey(opp.Parent_Opportunity__r.Owner.Company__c) ?
+                                  Dimension2Map.get(opp.Parent_Opportunity__r.Owner.Company__c) : null;
 
             String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
                                   opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
@@ -85,7 +89,7 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                line.c2g__Value__c                  = x == 0 ? opp.Invoice_Amount__c : (opp.Invoice_Amount__c * -1);
+                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
                 line.c2g__LineDescription__c        = journalName;
                 line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__Dimension1__c             = dimension1Id;
@@ -118,11 +122,12 @@ public class JournalGenerator {
                                 [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
                                         Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
                                         Parent_Opportunity__r.CI_Code__c, Amount, Total_Billable_Amount__c,
-                                        Parent_Opportunity__r.Project_Code__c
+                                        Parent_Opportunity__r.Project_Code__c, Parent_Opportunity__r.Owner.Company__c
                                 FROM Opportunity
                                 WHERE StageName = 'Closed - Complete'
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
+                                AND Owner.CompanyName = :CompanyName
                                 AND CloseDate >= :StartDate
                                 AND CloseDate <= :EndDate
                                 AND Amount != NULL];
@@ -159,10 +164,13 @@ public class JournalGenerator {
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                     WHERE Name = '2203 - Deferred Income - Bespoke Training'].Id;
         String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Training' LIMIT 1].Id;
-        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
         for (Opportunity opp : billableMilestones){
+
+            String dimension2Id = Dimension2Map.containsKey(opp.Parent_Opportunity__r.Owner.Company__c) ?
+                    Dimension2Map.get(opp.Parent_Opportunity__r.Owner.Company__c) : null;
+
             String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
                     opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
                     ciCodeDimensionMap.get(opp.Parent_Opportunity__r.CI_Code__c).Id;
@@ -172,7 +180,7 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                line.c2g__Value__c                  = x == 0 ? opp.Total_Billable_Amount__c : (opp.Total_Billable_Amount__c * -1);
+                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
                 line.c2g__LineDescription__c        = journalName;
                 line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__Dimension1__c             = dimension1Id;
@@ -203,12 +211,14 @@ public class JournalGenerator {
 
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, Session__r.CI_Code__c,
                                                                 Session__r.CI_Code__r.Dimension3Id__c,
-                                                                Session__r.CI_Code__r.Name, Subscription_Duration__c
+                                                                Session__r.CI_Code__r.Name, Subscription_Duration__c,
+                                                                Opportunity.Owner.Company__c
                                                         FROM OpportunityLineItem
                                                         WHERE Opportunity.IsClosed = TRUE
                                                         AND Opportunity.StageName != 'Closed Lost'
                                                         AND Opportunity.StageName != 'Closed - No Bid'
                                                         AND Opportunity.RecordTypeId = :publicTrainingId
+                                                        AND Session__r.Owner.CompanyName = :CompanyName
                                                         AND Session__r.CI_Code__c != NULL
                                                         AND Session__r.End_Date_Time__c >= :StartDate
                                                         AND Session__r.End_Date_Time__c <= :EndDate
@@ -251,10 +261,13 @@ public class JournalGenerator {
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                     WHERE Name = '2202 - Deferred Income - Public Training'].Id;
         String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Training' LIMIT 1].Id;
-        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
         for (OpportunityLineItem lineItem : subscriptionItems){
+
+            String dimension2Id = Dimension2Map.containsKey(lineItem.Opportunity.Owner.Company__c) ?
+                    Dimension2Map.get(lineItem.Opportunity.Owner.Company__c) : null;
+
             String dimension3Id = lineItem.Session__r.CI_Code__r.Dimension3Id__c != null ?
                     lineItem.Session__r.CI_Code__r.Dimension3Id__c :
                     ciCodeDimensionMap.get(lineItem.Session__r.CI_Code__c).Id;
@@ -300,12 +313,14 @@ public class JournalGenerator {
 
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, AmountRecognised__c, AmountRemaining__c,
                                                               Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
-                                                              Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate
+                                                              Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate,
+                                                              Opportunity.Owner.Company__c
                                                        FROM OpportunityLineItem
                                                        WHERE Opportunity.IsClosed = TRUE
                                                        AND Opportunity.StageName != 'Closed Lost'
                                                        AND Opportunity.StageName != 'Closed - No Bid'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
+                                                       AND Opportunity.Owner.CompanyName = :CompanyName
                                                        AND ServiceDate <= :EndDate
                                                        AND Product2.CI_Code__c != NULL
                                                        AND AmountRemaining__c > 0
@@ -345,10 +360,13 @@ public class JournalGenerator {
                                     WHERE Name = '4000 - Sales - Energy Spectrum - Single User'].Id;
         String deferredIncomeId = [SELECT Id FROM c2g__codaGeneralLedgerAccount__c
                                     WHERE Name = '2200 - Deferred Income - Subscriptions'].Id;
-        String dimension2Id     = [SELECT Id FROM c2g__codaDimension2__c WHERE Name = 'London' LIMIT 1].Id;
 
         // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
         for (OpportunityLineItem lineItem : subscriptionItems){
+
+            String dimension2Id = Dimension2Map.containsKey(lineItem.Opportunity.Owner.Company__c) ?
+                    Dimension2Map.get(lineItem.Opportunity.Owner.Company__c) : null;
+
             String dimension3Id = lineItem.Product2.CI_Code__r.Dimension3Id__c != null ?
                     lineItem.Product2.CI_Code__r.Dimension3Id__c :
                     ciCodeDimensionMap.get(lineItem.Product2.CI_Code__c).Id;
@@ -384,8 +402,6 @@ public class JournalGenerator {
         return journalHeader;
     }
 
-
-
     private Id getHeaderId(String headerName){
 
         c2g__codaJournal__c journal           = new c2g__codaJournal__c();
@@ -401,8 +417,6 @@ public class JournalGenerator {
 
     private void doInit(){
 
-        CompanyName = c2g.CODAAPICompany_2_0.GetCurrentCompanies(null)[0];
-
         List<c2g__codaPeriod__c> periods =
                                    [SELECT Id FROM c2g__codaPeriod__c
                                     WHERE c2g__StartDate__c = :StartDate
@@ -413,18 +427,20 @@ public class JournalGenerator {
                                     WHERE CurrencyIsoCode = 'GBP'
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
 
-        if (CompanyName != null && !periods.isEmpty() && !currencies.isEmpty()){
-            PeriodId    = periods[0].Id;
-            CurrencyId  = currencies[0].Id;
-            ValidParams = true;
-        } else {
-            ValidParams = false;
+        PeriodId        = periods[0].Id;
+        CurrencyId      = currencies[0].Id;
+        ValidParams     = true;
+        Dimension2Map   = new Map<String,String>();
+
+        for (c2g__codaDimension2__c company : [SELECT Id, Name FROM c2g__codaDimension2__c]){
+            Dimension2Map.put(company.Name, company.Id);
         }
     }
 
 
     // constructor - default
-    public JournalGenerator(){
+    public JournalGenerator(String companyName){
+        this.CompanyName     = companyName;
         this.StartDate       = Date.today().addMonths(-1).toStartOfMonth();
         this.EndDate         = Date.today().toStartOfMonth().addDays(-1);
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
@@ -432,7 +448,8 @@ public class JournalGenerator {
     }
 
     // constructor - optional date setting
-    public JournalGenerator(Integer year, Integer month){
+    public JournalGenerator(String companyName, Integer year, Integer month){
+        this.CompanyName     = companyName;
         this.StartDate       = Date.newInstance(year,month,01);
         this.EndDate         = this.StartDate.addMonths(1).addDays(-1);
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
