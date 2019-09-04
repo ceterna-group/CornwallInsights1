@@ -37,6 +37,7 @@
                 companies.forEach(function(company){
                    company.Current      = false;
                    company.Processing   = false;
+                   company.Journals     = [];
                 });
 
                 execution.Companies = companies;
@@ -49,47 +50,28 @@
             }
         });
         $A.enqueueAction(getUserCompanies);
-
-        // var journalCreate = $C.get('c.generateJournalsApex');
-        // journalCreate.setParams({ month : date });
-        // journalCreate.setCallback(this, function(response){
-        //     $C.set('v.responsePending',false);
-        //     console.log(response.getReturnValue());
-        //
-        //
-        //     if (response.getState() === 'SUCCESS'){
-        //
-        //         var responseObj = response.getReturnValue();
-        //         responseObj.name    = 'Test Journals for ' + dateString;
-        //
-        //         var executions = $C.get('v.executions');
-        //         executions.push(response.getReturnValue());
-        //         $C.set('v.executions',executions);
-        //     }
-        // });
-        // $A.enqueueAction(journalCreate);
-        // $C.set('v.responsePending',true);
     },
 
     iterate : function ($C) {
 
-        var execution = $C.get('v.execution');
-        var executions = $C.get('v.executions');
-
-        var iteration = $C.get('v.iteration');
-
-        console.log('iteration is ' + iteration);
-        console.log('count is ' + executions[execution].Companies.length);
+        var execution   = $C.get('v.execution');
+        var executions  = $C.get('v.executions');
+        var iteration   = $C.get('v.iteration');
 
         if (iteration < executions[execution].Companies.length){
 
             var company = executions[execution].Companies[iteration];
+
+            executions[execution].Companies[iteration].Processing = true;
+
+            $C.set('v.executions',executions);
 
             var setCompany = $C.get('c.setCurrentCompany');
             setCompany.setParams({ companyName : company.c2g__Company__r.Name});
             setCompany.setCallback(this, function (response) {
 
                 if (response.getState() === 'SUCCESS'){
+
                     var dateString  = $C.find('date').get('v.value');
                     var date        = new Date(new Date(dateString).setDate(10));
 
@@ -100,13 +82,12 @@
                     });
                     createJournals.setCallback(this, function(createResponse){
                         if (createResponse.getState() === 'SUCCESS'){
-                            console.log('res for create is ');
-                            console.log(createResponse.getReturnValue());
 
-                            company.Journals = createResponse.getReturnValue();
-
-                            var doSomething = $C.get('c.doSomething');
-                            $A.enqueueAction(doSomething);
+                            executions[execution].Companies[iteration].Journals = createResponse.getReturnValue()['journals'];
+                            executions[execution].Companies[iteration].Processing = false;
+                            $C.set('v.executions',executions);
+                            var iterate = $C.get('c.iterate');
+                            $A.enqueueAction(iterate);
                         }
                     });
 
@@ -115,6 +96,8 @@
             });
 
             $A.enqueueAction(setCompany);
+        } else {
+            $C.set('v.responsePending',false);
         }
 
         $C.set('v.iteration',iteration + 1);

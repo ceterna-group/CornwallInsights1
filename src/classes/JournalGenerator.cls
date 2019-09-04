@@ -36,7 +36,7 @@ public class JournalGenerator {
                                      AND RecordTypeId = :recordTypeId
                                      AND Parent_Opportunity__r.RecordTypeId = :consultingId
                                      AND Parent_Opportunity__r.CI_Code__c != NULL
-                                     AND Owner.CompanyName = :CompanyName
+                                     AND Owner.Business_Entity__c = :CompanyName
                                      AND CloseDate >= :StartDate
                                      AND CloseDate <= :EndDate
                                      AND Amount != NULL];
@@ -127,7 +127,7 @@ public class JournalGenerator {
                                 WHERE StageName = 'Closed - Complete'
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
-                                AND Owner.CompanyName = :CompanyName
+                                AND Owner.Business_Entity__c = :CompanyName
                                 AND CloseDate >= :StartDate
                                 AND CloseDate <= :EndDate
                                 AND Amount != NULL];
@@ -218,7 +218,7 @@ public class JournalGenerator {
                                                         AND Opportunity.StageName != 'Closed Lost'
                                                         AND Opportunity.StageName != 'Closed - No Bid'
                                                         AND Opportunity.RecordTypeId = :publicTrainingId
-                                                        AND Session__r.Owner.CompanyName = :CompanyName
+                                                        AND Session__r.Owner.Business_Entity__c = :CompanyName
                                                         AND Session__r.CI_Code__c != NULL
                                                         AND Session__r.End_Date_Time__c >= :StartDate
                                                         AND Session__r.End_Date_Time__c <= :EndDate
@@ -320,7 +320,7 @@ public class JournalGenerator {
                                                        AND Opportunity.StageName != 'Closed Lost'
                                                        AND Opportunity.StageName != 'Closed - No Bid'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
-                                                       AND Opportunity.Owner.CompanyName = :CompanyName
+                                                       AND Opportunity.Owner.Business_Entity__c = :CompanyName
                                                        AND ServiceDate <= :EndDate
                                                        AND Product2.CI_Code__c != NULL
                                                        AND AmountRemaining__c > 0
