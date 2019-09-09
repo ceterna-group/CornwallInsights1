@@ -9,11 +9,11 @@
         var dates = [];
         var today = new Date();
 
-        for (var x = 0; x < 12; x++){
-            var month = today.toString().substring(4,7);
-            var year = today.getFullYear();
+        for (var x = -5; x < 12; x++){
+            today = new Date().setMonth(new Date().getMonth() - x);
+            var month = new Date(today).toString().substring(4,7);
+            var year = new Date(today).getFullYear();
             dates.push(month + ' ' + year);
-            today = new Date(new Date(today).getFullYear(), new Date(today).getMonth() - 1, new Date(today).getDate());
         }
 
         $C.set('v.dates',dates);
