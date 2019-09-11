@@ -124,14 +124,16 @@ public class JournalGenerator {
                                 [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
                                         Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
                                         Parent_Opportunity__r.CI_Code__c, Amount, Total_Billable_Amount__c,
-                                        Parent_Opportunity__r.Project_Code__c, Parent_Opportunity__r.Owner.Company__c
+                                        Parent_Opportunity__r.Project_Code__c, Parent_Opportunity__r.Owner.Company__c,
+                                        Parent_Opportunity__r.Campaign_or_Session__r.Owner.Company__c,
+                                        Parent_Opportunity__r.Campaign_or_Session__r.Owner.Business_Entity__c
                                 FROM Opportunity
                                 WHERE StageName = 'Closed - Complete'
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
-                                AND Owner.Business_Entity__c = :CompanyName
-                                AND CloseDate >= :StartDate
-                                AND CloseDate <= :EndDate
+                                AND Parent_Opportunity__r.Campaign_or_Session__r.Owner.Business_Entity__c = :CompanyName
+                                AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c >= :StartDate
+                                AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c <= :EndDate
                                 AND Amount != NULL];
 
         // get a set of all ci codes
@@ -170,8 +172,8 @@ public class JournalGenerator {
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
         for (Opportunity opp : billableMilestones){
 
-            String dimension2Id = Dimension2Map.containsKey(opp.Parent_Opportunity__r.Owner.Company__c) ?
-                    Dimension2Map.get(opp.Parent_Opportunity__r.Owner.Company__c) : null;
+            String dimension2Id = Dimension2Map.containsKey(opp.Parent_Opportunity__r.Campaign_or_Session__r.Owner.Company__c) ?
+                    Dimension2Map.get(opp.Parent_Opportunity__r.Campaign_or_Session__r.Owner.Company__c) : null;
 
             String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
                     opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
