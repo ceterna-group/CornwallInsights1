@@ -26,31 +26,31 @@ public class JournalGenerator {
 
         // get Opportunities of record type 'Milestone Opportunity' which have a 'Consulting' opportunity parent
         // and a CloseDate which falls inside the month
-        List<Opportunity> billableMilestones =
-                                    [SELECT Id, CloseDate, Parent_Opportunity__r.CI_Code__r.Name,
-                                            Parent_Opportunity__r.CI_Code__r.Dimension3Id__c,
-                                            Parent_Opportunity__r.CI_Code__c, Amount, Invoice_Amount__c,
-                                            Parent_Opportunity__r.Project_Code__c, Parent_Opportunity__r.Owner.Company__c
-                                     FROM Opportunity
-                                     WHERE StageName = 'Closed - Complete'
-                                     AND RecordTypeId = :recordTypeId
-                                     AND Parent_Opportunity__r.RecordTypeId = :consultingId
-                                     AND Parent_Opportunity__r.CI_Code__c != NULL
-                                     AND Owner.Business_Entity__c = :CompanyName
-                                     AND CloseDate >= :StartDate
-                                     AND CloseDate <= :EndDate
-                                     AND Amount != NULL];
+        List<MPM4_BASE__Milestone1_Milestone__c> billableMilestones =
+                            [SELECT Id, MPM4_BASE__Kickoff__c, Opportunity__r.CI_Code__r.Name,
+                                    Opportunity__r.CI_Code__r.Dimension3Id__c,
+                                    Opportunity__r.CI_Code__c, Phase_Value_Print__c,
+                                    Opportunity__r.Project_Code__c, Opportunity__r.Owner.Company__c
+                            FROM MPM4_BASE__Milestone1_Milestone__c
+                            WHERE MPM4_BASE__Kickoff__c >= :StartDate
+                            AND MPM4_BASE__Kickoff__c <= :EndDate
+                            AND Opportunity__r.RecordTypeId = :recordTypeId
+                            AND Opportunity__r.RecordTypeId = :consultingId
+                            AND Opportunity__r.CI_Code__c != NULL
+                            AND Opportunity__r.Owner.Business_Entity__c = :CompanyName
+                            AND Phase_Value_Print__c != NULL];
+
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
         List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
 
-        for (Opportunity opp : billableMilestones){
-            if (opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c == null){
-                ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
+        for (MPM4_BASE__Milestone1_Milestone__c milestone : billableMilestones){
+            if (milestone.Opportunity__r.CI_Code__r.Dimension3Id__c == null){
+                ciCodeDimensionMap.put(milestone.Opportunity__r.CI_Code__c,
                         new c2g__codaDimension3__c(
-                                Name                  = opp.Parent_Opportunity__r.CI_Code__r.Name,
-                                c2g__ReportingCode__c = opp.Parent_Opportunity__r.Project_Code__c,
+                                Name                  = milestone.Opportunity__r.CI_Code__r.Name,
+                                c2g__ReportingCode__c = milestone.Opportunity__r.Project_Code__c,
                                 CurrencyIsoCode       = 'GBP'
                 ));
             }
@@ -75,24 +75,22 @@ public class JournalGenerator {
         String dimension1Id     = [SELECT Id FROM c2g__codaDimension1__c WHERE Name = 'Consultancy' LIMIT 1].Id;
 
         // iterate over each billable milestone opportunity and create two journal lines, one debiting and one crediting
-        for (Opportunity opp : billableMilestones){
+        for (MPM4_BASE__Milestone1_Milestone__c milestone  : billableMilestones){
 
-            String dimension2Id = Dimension2Map.containsKey(opp.Parent_Opportunity__r.Owner.Company__c) ?
-                                  Dimension2Map.get(opp.Parent_Opportunity__r.Owner.Company__c) : null;
+            String dimension2Id = Dimension2Map.containsKey(milestone.Opportunity__r.Owner.Company__c) ?
+                                  Dimension2Map.get(milestone.Opportunity__r.Owner.Company__c) : null;
 
-            String dimension3Id = opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
-                                  opp.Parent_Opportunity__r.CI_Code__r.Dimension3Id__c :
-                                  ciCodeDimensionMap.get(opp.Parent_Opportunity__r.CI_Code__c).Id;
+            String dimension3Id = milestone.Opportunity__r.CI_Code__r.Dimension3Id__c != null ?
+                                  milestone.Opportunity__r.CI_Code__r.Dimension3Id__c :
+                                  ciCodeDimensionMap.get(milestone.Opportunity__r.CI_Code__c).Id;
 
             for (Integer x = 0; x < 2; x++){
                 c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-//                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
-                line.c2g__Value__c                  = x == 0 ? (opp.Amount * -1) : opp.Amount;
+                line.c2g__Value__c                  = x == 0 ? (milestone.Phase_Value_Print__c * -1) : milestone.Phase_Value_Print__c;
                 line.c2g__LineDescription__c        = journalName;
-//                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
                 line.c2g__Dimension1__c             = dimension1Id;
                 line.c2g__Dimension2__c             = dimension2Id;
@@ -100,7 +98,7 @@ public class JournalGenerator {
                 lineItems.add(line);
             }
 
-            opp.JournalId__c = journalHeader;
+            milestone.Journal_ID__c = journalHeader;
         }
 
         insert lineItems;
@@ -184,10 +182,8 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-//                line.c2g__Value__c                  = x == 0 ? opp.Amount : (opp.Amount * -1);
                 line.c2g__Value__c                  = x == 0 ? (opp.Amount * -1) : opp.Amount;
                 line.c2g__LineDescription__c        = journalName;
-//                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
                 line.c2g__Dimension1__c             = dimension1Id;
                 line.c2g__Dimension2__c             = dimension2Id;
@@ -229,9 +225,6 @@ public class JournalGenerator {
                                                         AND Session__r.End_Date_Time__c >= :StartDate
                                                         AND Session__r.End_Date_Time__c <= :EndDate
                                                         AND TotalPrice != NULL];
-
-
-        System.debug('records found is ' + subscriptionItems.size());
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -285,10 +278,8 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
-//                line.c2g__Value__c                  = x == 0 ? value : (value * -1);
                 line.c2g__Value__c                  = x == 0 ? (value * -1) : value;
                 line.c2g__LineDescription__c        = journalName;
-//                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
                 line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
                 line.c2g__Dimension1__c             = dimension1Id;
                 line.c2g__Dimension2__c             = dimension2Id;
@@ -372,38 +363,37 @@ public class JournalGenerator {
         // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
         for (OpportunityLineItem lineItem : subscriptionItems){
 
-            String dimension2Id = Dimension2Map.containsKey(lineItem.Opportunity.Owner.Company__c) ?
-                    Dimension2Map.get(lineItem.Opportunity.Owner.Company__c) : null;
+            if (lineItem.Product2 != null && lineItem.Product2.CI_Code__c != null){
+                String dimension2Id = Dimension2Map.containsKey(lineItem.Opportunity.Owner.Company__c) ?
+                        Dimension2Map.get(lineItem.Opportunity.Owner.Company__c) : null;
 
-            String dimension3Id = lineItem.Product2.CI_Code__r.Dimension3Id__c != null ?
-                    lineItem.Product2.CI_Code__r.Dimension3Id__c :
-                    ciCodeDimensionMap.get(lineItem.Product2.CI_Code__c).Id;
+                String dimension3Id = lineItem.Product2.CI_Code__r.Dimension3Id__c != null ?
+                        lineItem.Product2.CI_Code__r.Dimension3Id__c :
+                        ciCodeDimensionMap.get(lineItem.Product2.CI_Code__c).Id;
 
-            Decimal value = (lineItem.TotalPrice / lineItem.Subscription_Duration__c).setScale(2);
+                Decimal value = (lineItem.TotalPrice / lineItem.Subscription_Duration__c).setScale(2);
 
-            if (lineItem.AmountRecognised__c == null){
-                lineItem.AmountRecognised__c = 0;
+                if (lineItem.AmountRecognised__c == null){
+                    lineItem.AmountRecognised__c = 0;
+                }
+
+                for (Integer x = 0; x < 2; x++){
+                    c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
+                    line.c2g__Journal__c                = journalHeader;
+                    line.c2g__LineType__c               = 'General Ledger Account';
+                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
+                    line.c2g__Value__c                  = x == 0 ? (value * -1) : value;
+                    line.c2g__LineDescription__c        = journalName;
+                    line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
+                    line.c2g__Dimension2__c             = dimension2Id;
+                    line.c2g__Dimension3__c             = dimension3Id;
+                    lineItems.add(line);
+                }
+
+                if (Label.JournalMode != 'TEST'){
+                    lineItem.AmountRecognised__c += value;
+                }
             }
-
-            for (Integer x = 0; x < 2; x++){
-                c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
-                line.c2g__Journal__c                = journalHeader;
-                line.c2g__LineType__c               = 'General Ledger Account';
-                line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
-//                line.c2g__Value__c                  = x == 0 ? value : (value * -1);
-                line.c2g__Value__c                  = x == 0 ? (value * -1) : value;
-                line.c2g__LineDescription__c        = journalName;
-//                line.c2g__DebitCredit__c            = x == 0 ? 'Debit' : 'Credit';
-                line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
-                line.c2g__Dimension2__c             = dimension2Id;
-                line.c2g__Dimension3__c             = dimension3Id;
-                lineItems.add(line);
-            }
-
-            if (Label.JournalMode != 'TEST'){
-                lineItem.AmountRecognised__c += value;
-            }
-
         }
 
         insert lineItems;
