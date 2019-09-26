@@ -19,7 +19,7 @@ public class JournalGenerator {
         String journalName  = 'Cornwall Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id consultingId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
-        Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Milestone Opportunity').getRecordTypeId();
+//        Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Milestone Opportunity').getRecordTypeId();
 
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
@@ -33,8 +33,8 @@ public class JournalGenerator {
                                     Opportunity__r.Project_Code__c, Opportunity__r.Owner.Company__c
                             FROM MPM4_BASE__Milestone1_Milestone__c
                             WHERE MPM4_BASE__Kickoff__c >= :StartDate
-                            AND MPM4_BASE__Kickoff__c <= :EndDate
-                            AND Opportunity__r.RecordTypeId = :recordTypeId
+                            AND MPM4_BASE__Kickoff__c < :EndDate
+                            AND Opportunity__r.StageName = 'Closed Won'
                             AND Opportunity__r.RecordTypeId = :consultingId
                             AND Opportunity__r.CI_Code__c != NULL
                             AND Opportunity__r.Owner.Business_Entity__c = :CompanyName
@@ -131,7 +131,7 @@ public class JournalGenerator {
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
                                 AND Parent_Opportunity__r.Campaign_or_Session__r.Owner.Business_Entity__c = :CompanyName
                                 AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c >= :StartDate
-                                AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c <= :EndDate
+                                AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c < :EndDate
                                 AND Amount != NULL];
 
         // get a set of all ci codes
@@ -223,7 +223,7 @@ public class JournalGenerator {
                                                         AND Session__r.Owner.Business_Entity__c = :CompanyName
                                                         AND Session__r.CI_Code__c != NULL
                                                         AND Session__r.End_Date_Time__c >= :StartDate
-                                                        AND Session__r.End_Date_Time__c <= :EndDate
+                                                        AND Session__r.End_Date_Time__c < :EndDate
                                                         AND TotalPrice != NULL];
 
         // get a set of all ci codes
@@ -320,7 +320,7 @@ public class JournalGenerator {
                                                        AND Opportunity.StageName != 'Closed - No Bid'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
                                                        AND Opportunity.Owner.Business_Entity__c = :CompanyName
-                                                       AND ServiceDate <= :EndDate
+                                                       AND ServiceDate < :EndDate
                                                        AND Product2.CI_Code__c != NULL
                                                        AND AmountRemaining__c > 0
                                                        AND TotalPrice != NULL
@@ -332,6 +332,9 @@ public class JournalGenerator {
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Product2.CI_Code__r.Dimension3Id__c == null){
+
+                System.debug('name is ' + lineItem.Product2.CI_Code__r.Name);
+
                 ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
                         new c2g__codaDimension3__c(
                                 Name                    = lineItem.Product2.CI_Code__r.Name,
@@ -420,7 +423,7 @@ public class JournalGenerator {
         List<c2g__codaPeriod__c> periods =
                                    [SELECT Id FROM c2g__codaPeriod__c
                                     WHERE c2g__StartDate__c = :StartDate
-                                    AND c2g__EndDate__c = :EndDate
+                                    AND c2g__EndDate__c = :EndDate.addDays(-1)
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
         List<c2g__codaAccountingCurrency__c> currencies =
                                    [SELECT Id FROM c2g__codaAccountingCurrency__c
@@ -442,17 +445,27 @@ public class JournalGenerator {
     public JournalGenerator(String companyName){
         this.CompanyName     = companyName;
         this.StartDate       = Date.today().addMonths(-1).toStartOfMonth();
-        this.EndDate         = Date.today().toStartOfMonth().addDays(-1);
+        this.EndDate         = Date.today().toStartOfMonth();
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
         this.doInit();
     }
 
     // constructor - optional date setting
     public JournalGenerator(String companyName, Integer year, Integer month){
+
+        system.debug('month is ' + month);
+
         this.CompanyName     = companyName;
         this.StartDate       = Date.newInstance(year,month,01);
-        this.EndDate         = this.StartDate.addMonths(1).addDays(-1);
+        this.EndDate         = this.StartDate.addMonths(1);
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
+
+
+        system.debug('start date is ' + this.StartDate);
+
+        system.debug('end date is ' + this.EndDate);
+
+
         this.doInit();
     }
 }

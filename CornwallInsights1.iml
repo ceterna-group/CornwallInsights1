@@ -33,6 +33,10 @@
                             <option name="selected" value="true" />
                           </MetadataEntry>
                           <MetadataEntry>
+                            <option name="name" value="JournalGeneratorTest" />
+                            <option name="selected" value="true" />
+                          </MetadataEntry>
+                          <MetadataEntry>
                             <option name="name" value="JournalTestPanelController" />
                             <option name="selected" value="true" />
                           </MetadataEntry>

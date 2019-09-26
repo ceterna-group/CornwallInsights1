@@ -31,7 +31,7 @@
         <div style="padding: 5px;position: relative;min-height: 50px;margin-bottom:5px;">
             <aura:iteration items="{!v.executions}" var="execution" indexVar="index">
                 <div class="execution">
-                    {!'Test execution ' + (index+ 1)}
+                    {!'Execution ' + (index+ 1)}
                     <aura:iteration items="{!execution.Companies}" var="company">
                         <div class="company">
                             <div class="companyHeader">{!company.c2g__Company__r.Name} </div>
