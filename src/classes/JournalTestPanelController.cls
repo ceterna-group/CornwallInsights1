@@ -5,7 +5,7 @@
 public class JournalTestPanelController {
 
     @AuraEnabled
-    public static Object getUserCompanies(){
+    public static List<c2g__codaUserCompany__c> getUserCompanies(){
 
         Set<String> companies = new Set<String>();
         companies.add('Cornwall Insight Australia Pty Ltd');
@@ -26,7 +26,7 @@ public class JournalTestPanelController {
     }
 
     @AuraEnabled
-    public static Object generateJournalsApex(Date month, String companyName){
+    public static Map<String,Object> generateJournalsApex(Date month, String companyName){
 
         Map<String,Object> responseMap  = new Map<String,Object>();
 

@@ -10,7 +10,6 @@ public class JournalGenerator {
     private String PeriodId;
     private String CurrencyId;
     private String CompanyName;
-    public Boolean ValidParams;
     public Map<String,String> Dimension2Map;
 
     // create header journal and journal lines for consulting opportunities
@@ -19,7 +18,6 @@ public class JournalGenerator {
         String journalName  = 'Cornwall Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id consultingId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
-//        Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Milestone Opportunity').getRecordTypeId();
 
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
@@ -39,7 +37,6 @@ public class JournalGenerator {
                             AND Opportunity__r.CI_Code__c != NULL
                             AND Opportunity__r.Owner.Business_Entity__c = :CompanyName
                             AND Phase_Value_Print__c != NULL];
-
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
@@ -210,7 +207,6 @@ public class JournalGenerator {
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
-
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, Session__r.CI_Code__c,
                                                                 Session__r.CI_Code__r.Dimension3Id__c,
                                                                 Session__r.CI_Code__r.Name, Subscription_Duration__c,
@@ -309,7 +305,6 @@ public class JournalGenerator {
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
 
-
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, AmountRecognised__c, AmountRemaining__c,
                                                               Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
                                                               Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate,
@@ -332,8 +327,6 @@ public class JournalGenerator {
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Product2.CI_Code__r.Dimension3Id__c == null){
-
-                System.debug('name is ' + lineItem.Product2.CI_Code__r.Name);
 
                 ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
                         new c2g__codaDimension3__c(
@@ -432,7 +425,6 @@ public class JournalGenerator {
 
         PeriodId        = periods[0].Id;
         CurrencyId      = currencies[0].Id;
-        ValidParams     = true;
         Dimension2Map   = new Map<String,String>();
 
         for (c2g__codaDimension2__c company : [SELECT Id, Name FROM c2g__codaDimension2__c]){
@@ -453,18 +445,10 @@ public class JournalGenerator {
     // constructor - optional date setting
     public JournalGenerator(String companyName, Integer year, Integer month){
 
-        system.debug('month is ' + month);
-
         this.CompanyName     = companyName;
         this.StartDate       = Date.newInstance(year,month,01);
         this.EndDate         = this.StartDate.addMonths(1);
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
-
-
-        system.debug('start date is ' + this.StartDate);
-
-        system.debug('end date is ' + this.EndDate);
-
 
         this.doInit();
     }
