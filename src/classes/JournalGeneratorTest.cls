@@ -162,14 +162,19 @@ public class JournalGeneratorTest {
         bespokeMilestoneOpp.Amount      = 100;
         bespokeMilestoneOpp.StageName   = 'Closed - Complete';
         bespokeMilestoneOpp.CloseDate   = Date.today();
-        bespokeMilestoneOpp.RecordTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Milestone Opportunity').getRecordTypeId();
+        bespokeMilestoneOpp.RecordTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Billable Milestone').getRecordTypeId();
         bespokeMilestoneOpp.Parent_Opportunity__c = bespokeTrainingOpp.Id;
         insert bespokeMilestoneOpp;
 
         // create public training opp
+        CI_Code__c publicTrainingCode   = new CI_Code__c();
+        publicTrainingCode.Name         = 'Public Training Session';
+        insert publicTrainingCode;
+
         Campaign publicTrainingCamp     = new Campaign();
         publicTrainingCamp.Name         = 'Public Training Session';
         publicTrainingCamp.End_Date_Time__c = Datetime.now();
+        publicTrainingCamp.CI_Code__c   = publicTrainingCode.Id;
         insert publicTrainingCamp;
 
         Opportunity publicTrainingOpp   = new Opportunity();
@@ -187,9 +192,9 @@ public class JournalGeneratorTest {
 
         PricebookEntry publicTrainingEntry = new PricebookEntry();
         publicTrainingEntry.Pricebook2Id = Test.getStandardPricebookId();
-        publicTrainingEntry.UnitPrice    = 100;
-        publicTrainingEntry.Product2Id   = publicTrainingProduct.Id;
-        publicTrainingEntry.IsActive     = true;
+        publicTrainingEntry.UnitPrice   = 100;
+        publicTrainingEntry.Product2Id  = publicTrainingProduct.Id;
+        publicTrainingEntry.IsActive    = true;
         insert publicTrainingEntry;
 
         OpportunityLineItem publicLineItem = new OpportunityLineItem();
@@ -199,11 +204,8 @@ public class JournalGeneratorTest {
         publicLineItem.Subscription_Duration__c = 12;
         publicLineItem.Session__c       = publicTrainingCamp.Id;
         publicLineItem.PricebookEntryId = publicTrainingEntry.Id;
+        publicLineItem.Campaign_Training_or_Events__c = publicTrainingCamp.Id;
         insert publicLineItem;
-
-
-        System.debug([SELECT Id,UnitPrice, TotalPrice FROM OpportunityLineItem WHERE Id = :publicLineItem.Id]);
-
 
         // create subscription opp
         Opportunity subscriptionOpp     = new Opportunity();
@@ -215,15 +217,15 @@ public class JournalGeneratorTest {
         subscriptionOpp.Campaign_or_Session__c = bespokeTrainingCamp.Id;
         insert subscriptionOpp;
 
-        Product2 subscriptionProduct     = new Product2();
-        subscriptionProduct.Name         = 'Subscription Product';
+        Product2 subscriptionProduct    = new Product2();
+        subscriptionProduct.Name        = 'Subscription Product';
         insert subscriptionProduct;
 
         PricebookEntry subscriptionEntry = new PricebookEntry();
-        subscriptionEntry.Pricebook2Id = Test.getStandardPricebookId();
-        subscriptionEntry.UnitPrice    = 100;
-        subscriptionEntry.Product2Id   = subscriptionProduct.Id;
-        subscriptionEntry.IsActive     = true;
+        subscriptionEntry.Pricebook2Id  = Test.getStandardPricebookId();
+        subscriptionEntry.UnitPrice     = 100;
+        subscriptionEntry.Product2Id    = subscriptionProduct.Id;
+        subscriptionEntry.IsActive      = true;
         insert subscriptionEntry;
 
         OpportunityLineItem subscriptionLineItem = new OpportunityLineItem();

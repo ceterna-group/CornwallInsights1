@@ -108,7 +108,7 @@ public class JournalGenerator {
         String journalName  = 'Cornwall Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id trainingId       = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Bespoke').getRecordTypeId();
-        Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Milestone Opportunity').getRecordTypeId();
+        Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Billable Milestone').getRecordTypeId();
 
         // declare map of opportunity ids to corresponding journals
         List<c2g__codaJournalLineItem__c> lineItems = new List<c2g__codaJournalLineItem__c>();
