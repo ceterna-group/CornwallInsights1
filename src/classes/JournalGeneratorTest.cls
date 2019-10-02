@@ -128,7 +128,7 @@ public class JournalGeneratorTest {
         // create consulting opp
         Opportunity consultingOpp       = new Opportunity();
         consultingOpp.AccountId         = account.Id;
-        consultingOpp.Name              = 'Consulting Opportunity';
+        consultingOpp.Name              = 'Consulting';
         consultingOpp.StageName         = 'Closed Won';
         consultingOpp.CloseDate         = Date.today();
         consultingOpp.RecordTypeId      = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
@@ -148,7 +148,7 @@ public class JournalGeneratorTest {
 
         Opportunity bespokeTrainingOpp  = new Opportunity();
         bespokeTrainingOpp.AccountId    = account.Id;
-        bespokeTrainingOpp.Name         = 'Bespoke Training Opportunity';
+        bespokeTrainingOpp.Name         = 'Bespoke Training';
         bespokeTrainingOpp.Amount       = 100;
         bespokeTrainingOpp.StageName    = 'Closed Won';
         bespokeTrainingOpp.CloseDate    = Date.today();
@@ -158,7 +158,7 @@ public class JournalGeneratorTest {
 
         Opportunity bespokeMilestoneOpp = new Opportunity();
         bespokeMilestoneOpp.AccountId   = account.Id;
-        bespokeMilestoneOpp.Name        = 'Bespoke Training Opportunity';
+        bespokeMilestoneOpp.Name        = 'Bespoke Training';
         bespokeMilestoneOpp.Amount      = 100;
         bespokeMilestoneOpp.StageName   = 'Closed - Complete';
         bespokeMilestoneOpp.CloseDate   = Date.today();
@@ -179,7 +179,7 @@ public class JournalGeneratorTest {
 
         Opportunity publicTrainingOpp   = new Opportunity();
         publicTrainingOpp.AccountId     = account.Id;
-        publicTrainingOpp.Name          = 'Public Training Opportunity';
+        publicTrainingOpp.Name          = 'Public Training';
         publicTrainingOpp.StageName     = 'Closed Won';
         publicTrainingOpp.CloseDate     = Date.today();
         publicTrainingOpp.RecordTypeId  = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Public').getRecordTypeId();
@@ -210,7 +210,7 @@ public class JournalGeneratorTest {
         // create subscription opp
         Opportunity subscriptionOpp     = new Opportunity();
         subscriptionOpp.AccountId       = account.Id;
-        subscriptionOpp.Name            = 'Public Training Opportunity';
+        subscriptionOpp.Name            = 'Public Training';
         subscriptionOpp.StageName       = 'Closed Won';
         subscriptionOpp.CloseDate       = Date.today();
         subscriptionOpp.RecordTypeId    = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Core').getRecordTypeId();

@@ -5,7 +5,6 @@
 <aura:component description="testTime" controller="TimeSheetController"
                 implements="flexipage:availableForAllPageTypes,force:hasRecordId" access="global">
 
-
     <aura:attribute name="timeSheet" type="Object"/>
     <aura:attribute name="dates" type="Object[]"/>
     <aura:attribute name="blockedDates" type="Object[]"/>

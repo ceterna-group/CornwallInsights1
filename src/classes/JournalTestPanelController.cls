@@ -5,7 +5,7 @@
 public class JournalTestPanelController {
 
     @AuraEnabled
-    public static List<c2g__codaUserCompany__c> getUserCompanies(){
+    public static List<Object> getUserCompanies(){
 
         Set<String> companies = new Set<String>();
         companies.add('Cornwall Insight Australia Pty Ltd');

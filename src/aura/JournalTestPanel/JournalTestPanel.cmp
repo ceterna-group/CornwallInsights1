@@ -2,7 +2,8 @@
  - Created by ronanwilliams on 2019-08-20.
  -->
 
-<aura:component description="JournalTestPanel" controller="JournalTestPanelController" implements="flexipage:availableForAllPageTypes" access="global">
+<aura:component description="JournalTestPanel" controller="JournalTestPanelController"
+                implements="flexipage:availableForAllPageTypes" access="global">
 
     <aura:attribute name="executions" type="Object[]"/>
     <aura:attribute name="execution" type="Integer"/>
