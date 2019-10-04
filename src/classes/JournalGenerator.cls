@@ -308,7 +308,7 @@ public class JournalGenerator {
         List<OpportunityLineItem> subscriptionItems = [SELECT Id, TotalPrice, AmountRecognised__c, AmountRemaining__c,
                                                               Product2.CI_Code__c, Product2.CI_Code__r.Dimension3Id__c,
                                                               Product2.CI_Code__r.Name, Subscription_Duration__c, ServiceDate,
-                                                              Opportunity.Owner.Company__c
+                                                              Opportunity.Owner.Company__c, Product2.c2g__CODASalesRevenueAccount__c
                                                        FROM OpportunityLineItem
                                                        WHERE Opportunity.IsClosed = TRUE
                                                        AND Opportunity.StageName != 'Closed Lost'
@@ -359,7 +359,8 @@ public class JournalGenerator {
         // iterate over each opportunity line item and create two journal lines, one debiting and one crediting
         for (OpportunityLineItem lineItem : subscriptionItems){
 
-            if (lineItem.Product2 != null && lineItem.Product2.CI_Code__c != null){
+            if (lineItem.Product2 != null && lineItem.Product2.CI_Code__c != null
+                    && lineItem.Product2.c2g__CODASalesRevenueAccount__c != null){
                 String dimension2Id = Dimension2Map.containsKey(lineItem.Opportunity.Owner.Company__c) ?
                         Dimension2Map.get(lineItem.Opportunity.Owner.Company__c) : null;
 
@@ -377,7 +378,7 @@ public class JournalGenerator {
                     c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
                     line.c2g__Journal__c                = journalHeader;
                     line.c2g__LineType__c               = 'General Ledger Account';
-                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? salesId : deferredIncomeId;
+                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? lineItem.Product2.c2g__CODASalesRevenueAccount__c : deferredIncomeId;
                     line.c2g__Value__c                  = x == 0 ? (value * -1) : value;
                     line.c2g__LineDescription__c        = journalName;
                     line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
