@@ -120,6 +120,11 @@
                         </aura:iteration>
                         <div class="entryColumn total">{!record.NonBillableTotal}</div>
                     </div>
+                    <aura:if isTrue="{!and(record.BillableTotal == 0, record.NonBillableTotal == 0)}">
+                        <div class="trash-icon" onclick="{!c.deleteRow}" data-id="{!record.Id}">
+                            <lightning:icon iconName="utility:delete" size="small"/>
+                        </div>
+                    </aura:if>
                 </div>
             </div>
         </aura:iteration>

@@ -12,8 +12,6 @@
         recordsCall.setCallback(this, function(response){
             if (response.getState() === "SUCCESS"){
 
-                console.log(response.getReturnValue());
-
                 var timesheet = $C.get('v.timeSheet');
 
                 console.log(timesheet);
@@ -35,8 +33,6 @@
 
                 var records         = [];
                 var billDefault     = $C.get('v.billableDefault');
-
-                console.log('bill default is ' + billDefault);
 
                 Object.keys(responseData['existingRecords']).forEach(function(record){
                     var recordInfo          = record.split('::');
@@ -159,9 +155,10 @@
             });
 
             $C.set('v.records',records);
+            $C.set('v.codes',codeList);
+
         }
 
-        $C.set('v.codes',codeList);
     },
     setActiveField : function($C,$E,$H){
 
@@ -241,5 +238,25 @@
         });
 
         $C.set('v.records',records);
+    },
+    deleteRow : function($C,$E,$H){
+
+        var sourceData  = $E.currentTarget.dataset;
+        var records     = $C.get('v.records');
+        var codes       = $C.get('v.codes');
+
+        for (var x = 0; x < records.length; x++){
+            if (records[x].Id === sourceData.id){
+                codes.push({
+                    Name : records[x].Name,
+                    Id : sourceData.id,
+                    Non_Billable__c : records[x].NotBillable
+                });
+                records.splice(x,1);
+            }
+        }
+
+        $C.set('v.records',records);
+        $C.set('v.codes',codes);
     }
 });

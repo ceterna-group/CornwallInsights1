@@ -113,3 +113,15 @@
     font-size: 14px;
     font-weight: bold;
 }
+
+.THIS .trash-icon {
+    position:absolute;
+    right: 10px;
+    top: 4px;
+    opacity: 0.3;
+    cursor: pointer;
+}
+
+.THIS .trash-icon:hover {
+    opacity: 1;
+}
