@@ -224,18 +224,26 @@ public class JournalGenerator {
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        Set<String> newDimensionString  = new Set<String>();
         List<CI_Code__c> codesToUpdate  = new List<CI_Code__c>();
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Session__r.CI_Code__r.Dimension3Id__c == null){
-                ciCodeDimensionMap.put(lineItem.Session__r.CI_Code__c,
-                        new c2g__codaDimension3__c(
-                                Name                    = lineItem.Session__r.CI_Code__r.Name,
-                                c2g__ReportingCode__c   = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
-                                        lineItem.Session__r.CI_Code__r.Name.substring(0,23) :
-                                        lineItem.Session__r.CI_Code__r.Name,
-                                CurrencyIsoCode         = 'GBP'
-                        ));
+
+                String dimensionString = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
+                        lineItem.Product2.CI_Code__r.Name.substring(0,23) :
+                        lineItem.Product2.CI_Code__r.Name;
+
+                if (!newDimensionString.contains(dimensionString)) {
+                    ciCodeDimensionMap.put(lineItem.Session__r.CI_Code__c,
+                            new c2g__codaDimension3__c(
+                                    Name = lineItem.Session__r.CI_Code__r.Name,
+                                    c2g__ReportingCode__c = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
+                                            lineItem.Session__r.CI_Code__r.Name.substring(0, 23) :
+                                            lineItem.Session__r.CI_Code__r.Name,
+                                    CurrencyIsoCode = 'GBP'
+                            ));
+                }
             }
         }
 
@@ -323,19 +331,24 @@ public class JournalGenerator {
 
         // get a set of all ci codes
         Map<String,c2g__codaDimension3__c> ciCodeDimensionMap = new Map<String,c2g__codaDimension3__c>();
+        Set<String> newDimensionString = new Set<String>();
         List<CI_Code__c> codesToUpdate = new List<CI_Code__c>();
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Product2.CI_Code__r.Dimension3Id__c == null){
 
-                ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
-                        new c2g__codaDimension3__c(
-                                Name                    = lineItem.Product2.CI_Code__r.Name,
-                                c2g__ReportingCode__c   = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
-                                                          lineItem.Product2.CI_Code__r.Name.substring(0,23) :
-                                                          lineItem.Product2.CI_Code__r.Name,
-                                CurrencyIsoCode         = 'GBP'
-                        ));
+                String dimensionString = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
+                        lineItem.Product2.CI_Code__r.Name.substring(0,23) :
+                        lineItem.Product2.CI_Code__r.Name;
+
+                if (!newDimensionString.contains(dimensionString)){
+                    ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
+                            new c2g__codaDimension3__c(
+                                    Name                    = lineItem.Product2.CI_Code__r.Name,
+                                    c2g__ReportingCode__c   = dimensionString,
+                                    CurrencyIsoCode         = 'GBP'
+                            ));
+                }
             }
         }
 
