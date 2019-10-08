@@ -230,9 +230,9 @@ public class JournalGenerator {
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Session__r.CI_Code__r.Dimension3Id__c == null){
 
-                String dimensionString = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
-                        lineItem.Product2.CI_Code__r.Name.substring(0,23) :
-                        lineItem.Product2.CI_Code__r.Name;
+                String dimensionString = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
+                        lineItem.Session__r.CI_Code__r.Name.substring(0,23) :
+                        lineItem.Session__r.CI_Code__r.Name;
 
                 if (!newDimensionString.contains(dimensionString)) {
                     ciCodeDimensionMap.put(lineItem.Session__r.CI_Code__c,
