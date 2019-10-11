@@ -9,6 +9,7 @@ public class JournalGenerator {
     public Date EndDate;
     public String PeriodId;
     public String CurrencyId;
+    public String CurrencyIsoCode;
     public String CompanyName;
     public Map<String,String> Dimension2Map;
 
@@ -47,8 +48,7 @@ public class JournalGenerator {
                 ciCodeDimensionMap.put(milestone.Opportunity__r.CI_Code__c,
                         new c2g__codaDimension3__c(
                                 Name                  = milestone.Opportunity__r.CI_Code__r.Name,
-                                c2g__ReportingCode__c = milestone.Opportunity__r.Project_Code__c,
-                                CurrencyIsoCode       = 'GBP'
+                                c2g__ReportingCode__c = milestone.Opportunity__r.CI_Code__c
                 ));
             }
         }
@@ -140,8 +140,7 @@ public class JournalGenerator {
                 ciCodeDimensionMap.put(opp.Parent_Opportunity__r.CI_Code__c,
                     new c2g__codaDimension3__c(
                         Name                    = opp.Parent_Opportunity__r.CI_Code__r.Name,
-                        c2g__ReportingCode__c   = opp.Parent_Opportunity__r.Project_Code__c,
-                        CurrencyIsoCode         = 'GBP'
+                        c2g__ReportingCode__c   = opp.Parent_Opportunity__r.CI_Code__c
                     ));
             }
         }
@@ -229,19 +228,11 @@ public class JournalGenerator {
 
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Session__r.CI_Code__r.Dimension3Id__c == null){
-
-                String dimensionString = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
-                        lineItem.Session__r.CI_Code__r.Name.substring(0,23) :
-                        lineItem.Session__r.CI_Code__r.Name;
-
-                if (!newDimensionString.contains(dimensionString)) {
+                if (!newDimensionString.contains(lineItem.Session__r.CI_Code__c)) {
                     ciCodeDimensionMap.put(lineItem.Session__r.CI_Code__c,
                             new c2g__codaDimension3__c(
-                                    Name = lineItem.Session__r.CI_Code__r.Name,
-                                    c2g__ReportingCode__c = lineItem.Session__r.CI_Code__r.Name.length() > 24 ?
-                                            lineItem.Session__r.CI_Code__r.Name.substring(0, 23) :
-                                            lineItem.Session__r.CI_Code__r.Name,
-                                    CurrencyIsoCode = 'GBP'
+                                    Name                    = lineItem.Session__r.CI_Code__r.Name,
+                                    c2g__ReportingCode__c   = lineItem.Session__r.CI_Code__c
                             ));
                 }
             }
@@ -337,16 +328,11 @@ public class JournalGenerator {
         for (OpportunityLineItem lineItem : subscriptionItems){
             if (lineItem.Product2.CI_Code__r.Dimension3Id__c == null){
 
-                String dimensionString = lineItem.Product2.CI_Code__r.Name.length() > 24 ?
-                        lineItem.Product2.CI_Code__r.Name.substring(0,23) :
-                        lineItem.Product2.CI_Code__r.Name;
-
-                if (!newDimensionString.contains(dimensionString)){
+                if (!newDimensionString.contains(lineItem.Product2.CI_Code__c)){
                     ciCodeDimensionMap.put(lineItem.Product2.CI_Code__c,
                             new c2g__codaDimension3__c(
                                     Name                    = lineItem.Product2.CI_Code__r.Name,
-                                    c2g__ReportingCode__c   = dimensionString,
-                                    CurrencyIsoCode         = 'GBP'
+                                    c2g__ReportingCode__c   = lineItem.Product2.CI_Code__c
                             ));
                 }
             }
@@ -391,7 +377,8 @@ public class JournalGenerator {
                     c2g__codaJournalLineItem__c line    = new c2g__codaJournalLineItem__c();
                     line.c2g__Journal__c                = journalHeader;
                     line.c2g__LineType__c               = 'General Ledger Account';
-                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? lineItem.Product2.c2g__CODASalesRevenueAccount__c : deferredIncomeId;
+                    line.c2g__GeneralLedgerAccount__c   = x == 0 ? lineItem.Product2.c2g__CODASalesRevenueAccount__c :
+                                                            deferredIncomeId;
                     line.c2g__Value__c                  = x == 0 ? (value * -1) : value;
                     line.c2g__LineDescription__c        = journalName;
                     line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
@@ -433,13 +420,15 @@ public class JournalGenerator {
                                     AND c2g__EndDate__c = :EndDate.addDays(-1)
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
         List<c2g__codaAccountingCurrency__c> currencies =
-                                   [SELECT Id FROM c2g__codaAccountingCurrency__c
+                                   [SELECT Id, CurrencyIsoCode
+                                    FROM c2g__codaAccountingCurrency__c
                                     WHERE CurrencyIsoCode = :currencyCode
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
 
-        PeriodId        = !periods.isEmpty() ? periods[0].Id : null;
-        CurrencyId      = !currencies.isEmpty() ? currencies[0].Id : null;
-        Dimension2Map   = new Map<String,String>();
+        PeriodId            = !periods.isEmpty() ? periods[0].Id : null;
+        CurrencyId          = !currencies.isEmpty() ? currencies[0].Id : null;
+        CurrencyIsoCode     = !currencies.isEmpty() ? currencies[0].CurrencyIsoCode : null;
+        Dimension2Map       = new Map<String,String>();
 
 
 
@@ -448,9 +437,9 @@ public class JournalGenerator {
         }
 
 
-        system.debug('period id is ' + PeriodId);
-        system.debug('currency id is ' + CurrencyId);
-        system.debug('dim map id is ' + Dimension2Map);
+        System.debug('period id is ' + PeriodId);
+        System.debug('currency id is ' + CurrencyId);
+        System.debug('dim map id is ' + Dimension2Map);
 
     }
 
