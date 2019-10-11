@@ -28,22 +28,34 @@ public class JournalTestPanelController {
     @AuraEnabled
     public static Map<String,Object> generateJournalsApex(Date month, String companyName){
 
+        Map<String,String> currencyMap  = new Map<String,String>();
+        currencyMap.put('Cornwall Insight Australia Pty Ltd','AUD');
+        currencyMap.put('Cornwall Insight Ireland','EUR');
+        currencyMap.put('Cornwall Insight Ltd','GBP');
+        currencyMap.put('Pixie Energy Limited','GBP');
+
         Map<String,Object> responseMap  = new Map<String,Object>();
+        JournalGenerator generator      = new JournalGenerator(companyName,currencyMap.get(companyName),month.year(), month.month());
 
-        JournalGenerator generator  = new JournalGenerator(companyName,month.year(), month.month());
-        Set<Id> journalIds          = new Set<Id>();
-        journalIds.add(generator.buildConsultingJournal());
-        journalIds.add(generator.buildBespokeTrainingJournal());
-        journalIds.add(generator.buildSubscriptionJournal());
-        journalIds.add(generator.buildPublicTrainingJournal());
+        if (generator.PeriodId != null && generator.CurrencyId != null){
+            Set<Id> journalIds              = new Set<Id>();
 
-        List<c2g__codaJournal__c> journals = [SELECT Id, Name, c2g__JournalDescription__c,
-                                                     c2g__Period__c, c2g__OwnerCompany__r.Name,
-                                                    (SELECT Id FROM c2g__JournalLineItems__r)
-                                              FROM c2g__codaJournal__c WHERE Id IN :journalIds];
+            journalIds.add(generator.buildConsultingJournal());
+            journalIds.add(generator.buildBespokeTrainingJournal());
+            journalIds.add(generator.buildSubscriptionJournal());
+            journalIds.add(generator.buildPublicTrainingJournal());
 
-        responseMap.put('journals',journals);
-        responseMap.put('date',month);
+            List<c2g__codaJournal__c> journals = [SELECT Id, Name, c2g__JournalDescription__c,
+                                                        c2g__Period__c, c2g__OwnerCompany__r.Name,
+                                                (SELECT Id FROM c2g__JournalLineItems__r)
+                                                FROM c2g__codaJournal__c WHERE Id IN :journalIds];
+
+            responseMap.put('journals',journals);
+            responseMap.put('date',month);
+        } else {
+            responseMap.put('error','required parameters missing');
+        }
+
 
         return responseMap;
     }

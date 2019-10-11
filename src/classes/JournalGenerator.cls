@@ -4,12 +4,12 @@
 
 public class JournalGenerator {
 
-    private Datetime StartDatetime;
-    private Date StartDate;
-    private Date EndDate;
-    private String PeriodId;
-    private String CurrencyId;
-    private String CompanyName;
+    public Datetime StartDatetime;
+    public Date StartDate;
+    public Date EndDate;
+    public String PeriodId;
+    public String CurrencyId;
+    public String CompanyName;
     public Map<String,String> Dimension2Map;
 
     // create header journal and journal lines for consulting opportunities
@@ -425,7 +425,7 @@ public class JournalGenerator {
     }
 
 
-    private void doInit(){
+    private void doInit(String currencyCode){
 
         List<c2g__codaPeriod__c> periods =
                                    [SELECT Id FROM c2g__codaPeriod__c
@@ -434,36 +434,44 @@ public class JournalGenerator {
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
         List<c2g__codaAccountingCurrency__c> currencies =
                                    [SELECT Id FROM c2g__codaAccountingCurrency__c
-                                    WHERE CurrencyIsoCode = 'GBP'
+                                    WHERE CurrencyIsoCode = :currencyCode
                                     AND c2g__OwnerCompany__r.Name = :CompanyName];
 
-        PeriodId        = periods[0].Id;
-        CurrencyId      = currencies[0].Id;
+        PeriodId        = !periods.isEmpty() ? periods[0].Id : null;
+        CurrencyId      = !currencies.isEmpty() ? currencies[0].Id : null;
         Dimension2Map   = new Map<String,String>();
+
+
 
         for (c2g__codaDimension2__c company : [SELECT Id, Name FROM c2g__codaDimension2__c]){
             Dimension2Map.put(company.Name, company.Id);
         }
+
+
+        system.debug('period id is ' + PeriodId);
+        system.debug('currency id is ' + CurrencyId);
+        system.debug('dim map id is ' + Dimension2Map);
+
     }
 
 
     // constructor - default
-    public JournalGenerator(String companyName){
+    public JournalGenerator(String companyName, String currencyCode){
         this.CompanyName     = companyName;
         this.StartDate       = Date.today().addMonths(-1).toStartOfMonth();
         this.EndDate         = Date.today().toStartOfMonth();
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
-        this.doInit();
+        this.doInit(currencyCode);
     }
 
     // constructor - optional date setting
-    public JournalGenerator(String companyName, Integer year, Integer month){
+    public JournalGenerator(String companyName, String currencyCode, Integer year, Integer month){
 
         this.CompanyName     = companyName;
         this.StartDate       = Date.newInstance(year,month,01);
         this.EndDate         = this.StartDate.addMonths(1);
         this.StartDatetime   = Datetime.newInstance(StartDate.year(),StartDate.month(),01);
 
-        this.doInit();
+        this.doInit(currencyCode);
     }
 }

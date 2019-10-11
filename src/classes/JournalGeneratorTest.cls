@@ -15,12 +15,12 @@ public class JournalGeneratorTest {
             Test.startTest();
             update new User(
                 Id = UserInfo.getUserId(),
-                Business_Entity__c = 'Cornwall Insight Australia Pty Ltd'
+                Business_Entity__c = 'Cornwall Insight Ltd'
             );
 
             // Create Company
             c2g__codaCompany__c company = new c2g__codaCompany__c();
-            company.Name                = 'Cornwall Insight Australia Pty Ltd';
+            company.Name                = 'Cornwall Insight Ltd';
             company.RecordTypeId        = Schema.SObjectType.c2g__codaCompany__c.recordTypeInfosByName.get('VAT').recordTypeId;
             insert company;
 
@@ -46,7 +46,7 @@ public class JournalGeneratorTest {
         }
 
         // Assert user logged into the company
-        System.assertEquals('Cornwall Insight Australia Pty Ltd', c2g.CODAAPICompany_2_0.GetCurrentCompanies(null)[0]);
+        System.assertEquals('Cornwall Insight Ltd', c2g.CODAAPICompany_2_0.GetCurrentCompanies(null)[0]);
 
         // Create Year and Periods
         c2g__codaYear__c yr         = new c2g__codaYear__c();
@@ -243,14 +243,14 @@ public class JournalGeneratorTest {
     public static void testGetSetCurrentCompanies(){
 
         System.assertEquals(1,JournalTestPanelController.getUserCompanies().size());
-        System.assertEquals(true,JournalTestPanelController.setCurrentCompany('Cornwall Insight Australia Pty Ltd'));
+        System.assertEquals(true,JournalTestPanelController.setCurrentCompany('Cornwall Insight Ltd'));
 
     }
 
     @IsTest
     public static void testGenerateJournals(){
 
-        JournalTestPanelController.generateJournalsApex(Date.today(), 'Cornwall Insight Australia Pty Ltd');
+        JournalTestPanelController.generateJournalsApex(Date.today(), 'Cornwall Insight Ltd');
 
     }
 
