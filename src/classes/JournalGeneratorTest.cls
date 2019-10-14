@@ -130,6 +130,7 @@ public class JournalGeneratorTest {
         consultingOpp.AccountId         = account.Id;
         consultingOpp.Name              = 'Consulting';
         consultingOpp.StageName         = 'Closed Won';
+        consultingOpp.CI_Company__c     = 'Cornwall Insight Ltd';
         consultingOpp.CloseDate         = Date.today();
         consultingOpp.RecordTypeId      = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
         insert consultingOpp;
@@ -151,6 +152,7 @@ public class JournalGeneratorTest {
         bespokeTrainingOpp.Name         = 'Bespoke Training';
         bespokeTrainingOpp.Amount       = 100;
         bespokeTrainingOpp.StageName    = 'Closed Won';
+        bespokeTrainingOpp.CI_Company__c = 'Cornwall Insight Ltd';
         bespokeTrainingOpp.CloseDate    = Date.today();
         bespokeTrainingOpp.RecordTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Bespoke').getRecordTypeId();
         bespokeTrainingOpp.Campaign_or_Session__c = bespokeTrainingCamp.Id;
@@ -161,6 +163,7 @@ public class JournalGeneratorTest {
         bespokeMilestoneOpp.Name        = 'Bespoke Training';
         bespokeMilestoneOpp.Amount      = 100;
         bespokeMilestoneOpp.StageName   = 'Closed - Complete';
+        bespokeMilestoneOpp.CI_Company__c = 'Cornwall Insight Ltd';
         bespokeMilestoneOpp.CloseDate   = Date.today();
         bespokeMilestoneOpp.RecordTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Billable Milestone').getRecordTypeId();
         bespokeMilestoneOpp.Parent_Opportunity__c = bespokeTrainingOpp.Id;
@@ -181,6 +184,7 @@ public class JournalGeneratorTest {
         publicTrainingOpp.AccountId     = account.Id;
         publicTrainingOpp.Name          = 'Public Training';
         publicTrainingOpp.StageName     = 'Closed Won';
+        publicTrainingOpp.CI_Company__c = 'Cornwall Insight Ltd';
         publicTrainingOpp.CloseDate     = Date.today();
         publicTrainingOpp.RecordTypeId  = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Public').getRecordTypeId();
         publicTrainingOpp.Campaign_or_Session__c = bespokeTrainingCamp.Id;
@@ -212,6 +216,7 @@ public class JournalGeneratorTest {
         subscriptionOpp.AccountId       = account.Id;
         subscriptionOpp.Name            = 'Public Training';
         subscriptionOpp.StageName       = 'Closed Won';
+        subscriptionOpp.CI_Company__c   = 'Cornwall Insight Ltd';
         subscriptionOpp.CloseDate       = Date.today();
         subscriptionOpp.RecordTypeId    = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Core').getRecordTypeId();
         subscriptionOpp.Campaign_or_Session__c = bespokeTrainingCamp.Id;

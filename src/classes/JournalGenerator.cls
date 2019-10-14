@@ -16,7 +16,7 @@ public class JournalGenerator {
     // create header journal and journal lines for consulting opportunities
     public Id buildConsultingJournal(){
 
-        String journalName  = 'Cornwall Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id consultingId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
 
@@ -36,7 +36,7 @@ public class JournalGenerator {
                             AND Opportunity__r.StageName = 'Closed Won'
                             AND Opportunity__r.RecordTypeId = :consultingId
                             AND Opportunity__r.CI_Code__c != NULL
-                            AND Opportunity__r.Owner.Business_Entity__c = :CompanyName
+                            AND Opportunity__r.CI_Company__c = :CompanyName
                             AND Phase_Value_Print__c != NULL];
 
         // get a set of all ci codes
@@ -105,7 +105,7 @@ public class JournalGenerator {
 
     public Id buildBespokeTrainingJournal(){
 
-        String journalName  = 'Cornwall Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id trainingId       = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Bespoke').getRecordTypeId();
         Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Billable Milestone').getRecordTypeId();
@@ -126,7 +126,7 @@ public class JournalGenerator {
                                 WHERE StageName = 'Closed - Complete'
                                 AND RecordTypeId = :recordTypeId
                                 AND Parent_Opportunity__r.RecordTypeId = :trainingId
-                                AND Parent_Opportunity__r.Campaign_or_Session__r.Owner.Business_Entity__c = :CompanyName
+                                AND CI_Company__c = :CompanyName
                                 AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c >= :StartDate
                                 AND Parent_Opportunity__r.Campaign_or_Session__r.End_Date_Time__c < :EndDate
                                 AND Amount != NULL];
@@ -199,7 +199,7 @@ public class JournalGenerator {
 
     public String buildPublicTrainingJournal(){
 
-        String journalName  = 'Cornwall Public Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Public Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id publicTrainingId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Public').getRecordTypeId();
 
@@ -215,7 +215,7 @@ public class JournalGenerator {
                                                         AND Opportunity.StageName != 'Closed Lost'
                                                         AND Opportunity.StageName != 'Closed - No Bid'
                                                         AND Opportunity.RecordTypeId = :publicTrainingId
-                                                        AND Session__r.Owner.Business_Entity__c = :CompanyName
+                                                        AND Opportunity.CI_Company__c = :CompanyName
                                                         AND Session__r.CI_Code__c != NULL
                                                         AND Session__r.End_Date_Time__c >= :StartDate
                                                         AND Session__r.End_Date_Time__c < :EndDate
@@ -297,7 +297,7 @@ public class JournalGenerator {
     public String buildSubscriptionJournal(){
 
 
-        String journalName  = 'Cornwall Subscription Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Subscription Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id subscriptionId   = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Core').getRecordTypeId();
 
@@ -313,7 +313,7 @@ public class JournalGenerator {
                                                        AND Opportunity.StageName != 'Closed Lost'
                                                        AND Opportunity.StageName != 'Closed - No Bid'
                                                        AND Opportunity.RecordTypeId = :subscriptionId
-                                                       AND Opportunity.Owner.Business_Entity__c = :CompanyName
+                                                       AND Opportunity.CI_Company__c = :CompanyName
                                                        AND ServiceDate < :EndDate
                                                        AND Product2.CI_Code__c != NULL
                                                        AND AmountRemaining__c > 0
