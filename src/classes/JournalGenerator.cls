@@ -16,7 +16,8 @@ public class JournalGenerator {
     // create header journal and journal lines for consulting opportunities
     public Id buildConsultingJournal(){
 
-        String journalName  = CompanyName + ' Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Consulting Revenue ' + StartDatetime.format('MMMMM') + ' ' +
+                              String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id consultingId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Consulting').getRecordTypeId();
 
@@ -27,12 +28,12 @@ public class JournalGenerator {
         // and a CloseDate which falls inside the month
         List<MPM4_BASE__Milestone1_Milestone__c> billableMilestones =
                             [SELECT Id, MPM4_BASE__Kickoff__c, Opportunity__r.CI_Code__r.Name,
-                                    Opportunity__r.CI_Code__r.Dimension3Id__c,
+                                    Opportunity__r.CI_Code__r.Dimension3Id__c, AmountRemaining__c, Amount_Posted__c,
                                     Opportunity__r.CI_Code__c, Phase_Value_Print__c,
                                     Opportunity__r.Project_Code__c, Opportunity__r.Owner.Company__c
                             FROM MPM4_BASE__Milestone1_Milestone__c
-                            WHERE MPM4_BASE__Kickoff__c >= :StartDate
-                            AND MPM4_BASE__Kickoff__c < :EndDate
+                            WHERE MPM4_BASE__Kickoff__c < :EndDate
+                            AND AmountRemaining__c > 0
                             AND Opportunity__r.StageName = 'Closed Won'
                             AND Opportunity__r.RecordTypeId = :consultingId
                             AND Opportunity__r.CI_Code__c != NULL
@@ -86,7 +87,7 @@ public class JournalGenerator {
                 line.c2g__Journal__c                = journalHeader;
                 line.c2g__LineType__c               = 'General Ledger Account';
                 line.c2g__GeneralLedgerAccount__c   = x == 0 ? workInProgressId : deferredIncomeId;
-                line.c2g__Value__c                  = x == 0 ? (milestone.Phase_Value_Print__c * -1) : milestone.Phase_Value_Print__c;
+                line.c2g__Value__c                  = x == 0 ? (milestone.AmountRemaining__c * -1) : milestone.AmountRemaining__c;
                 line.c2g__LineDescription__c        = journalName;
                 line.c2g__DebitCredit__c            = x == 0 ? 'Credit' : 'Debit';
                 line.c2g__Dimension1__c             = dimension1Id;
@@ -96,6 +97,10 @@ public class JournalGenerator {
             }
 
             milestone.Journal_ID__c = journalHeader;
+
+            milestone.Amount_Posted__c = milestone.Amount_Posted__c == null ?
+                    milestone.AmountRemaining__c :
+                    milestone.Amount_Posted__c + milestone.AmountRemaining__c;
         }
 
         insert lineItems;
@@ -105,7 +110,8 @@ public class JournalGenerator {
 
     public Id buildBespokeTrainingJournal(){
 
-        String journalName  = CompanyName + ' Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Bespoke Training Revenue ' + StartDatetime.format('MMMMM') + ' ' +
+                              String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id trainingId       = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Bespoke').getRecordTypeId();
         Id recordTypeId     = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Billable Milestone').getRecordTypeId();
@@ -199,7 +205,8 @@ public class JournalGenerator {
 
     public String buildPublicTrainingJournal(){
 
-        String journalName  = CompanyName + ' Public Training Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Public Training Revenue ' + StartDatetime.format('MMMMM') + ' ' +
+                              String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id publicTrainingId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Training Public').getRecordTypeId();
 
@@ -297,7 +304,8 @@ public class JournalGenerator {
     public String buildSubscriptionJournal(){
 
 
-        String journalName  = CompanyName + ' Subscription Revenue ' + StartDatetime.format('MMMMM') + ' ' + String.valueOf(StartDate.year()).substring(2,4);
+        String journalName  = CompanyName + ' Subscription Revenue ' + StartDatetime.format('MMMMM') + ' ' +
+                              String.valueOf(StartDate.year()).substring(2,4);
         Id journalHeader    = getHeaderId(journalName);
         Id subscriptionId   = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Core').getRecordTypeId();
 
@@ -430,17 +438,9 @@ public class JournalGenerator {
         CurrencyIsoCode     = !currencies.isEmpty() ? currencies[0].CurrencyIsoCode : null;
         Dimension2Map       = new Map<String,String>();
 
-
-
         for (c2g__codaDimension2__c company : [SELECT Id, Name FROM c2g__codaDimension2__c]){
             Dimension2Map.put(company.Name, company.Id);
         }
-
-
-        System.debug('period id is ' + PeriodId);
-        System.debug('currency id is ' + CurrencyId);
-        System.debug('dim map id is ' + Dimension2Map);
-
     }
 
 

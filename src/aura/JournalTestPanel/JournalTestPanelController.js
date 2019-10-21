@@ -27,12 +27,16 @@
 
             if (response.getState() === 'SUCCESS'){
 
+                var responseMap = response.getReturnValue();
+
+                console.log('res map',responseMap);
+
                 var executions  = $C.get('v.executions');
                 $C.set('v.execution', executions.length);
                 $C.set('v.iteration',0);
 
                 var execution   = {};
-                var companies   = response.getReturnValue();
+                var companies   = responseMap['companies'];
 
                 companies.forEach(function(company){
                    company.Current      = false;
@@ -44,6 +48,7 @@
                 executions.push(execution);
 
                 $C.set('v.executions',executions);
+                $C.set('v.startingCompany',responseMap['currentCompany'][0]);
 
                 var iterate = $C.get('c.iterate');
                 $A.enqueueAction(iterate);
@@ -97,6 +102,15 @@
 
             $A.enqueueAction(setCompany);
         } else {
+
+            var revertCompany = $C.get('c.setCurrentCompany');
+            revertCompany.setParams({ companyName : $C.get('v.startingCompany')});
+            // revertCompany.setCallback(this, function (response) {
+            //     if (response.getState() !== 'SUCCESS'){
+            //     }
+            // });
+            $A.enqueueAction(revertCompany);
+
             $C.set('v.responsePending',false);
         }
 

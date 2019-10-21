@@ -9,6 +9,7 @@
     <aura:attribute name="execution" type="Integer"/>
     <aura:attribute name="iteration" type="Integer"/>
     <aura:attribute name="dates" type="Object[]"/>
+    <aura:attribute name="startingCompany" type="String"/>
     <aura:attribute name="responsePending" type="Boolean" default="false"/>
 
     <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>

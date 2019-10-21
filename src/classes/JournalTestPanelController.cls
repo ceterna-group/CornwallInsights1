@@ -5,24 +5,38 @@
 public class JournalTestPanelController {
 
     @AuraEnabled
-    public static List<Object> getUserCompanies(){
+    public static Map<String,Object> getUserCompanies(){
 
-        Set<String> companies = new Set<String>();
-        companies.add('Cornwall Insight Australia Pty Ltd');
-        companies.add('Cornwall Insight Ireland');
-        companies.add('Cornwall Insight Ltd');
-        companies.add('Pixie Energy Limited');
+        Map<String,Object> responseMap = new Map<String,Object>();
 
-        return [SELECT c2g__Company__r.Name
+        responseMap.put('companies',
+                [SELECT c2g__Company__r.Name
                 FROM c2g__codaUserCompany__c
                 WHERE c2g__User__c = :UserInfo.getUserId()
-                AND c2g__Company__r.Name IN :companies];
+                AND c2g__Company__r.Name IN
+                        ('Cornwall Insight Australia Pty Ltd',
+                        'Cornwall Insight Ireland',
+                        'Cornwall Insight Ltd',
+                        'Pixie Energy Limited')]);
+
+        responseMap.put('currentCompany',c2g.CODAAPICompany_2_0.GetCurrentCompanies(new c2g.CODAAPICommon_2_0.Context()));
+
+        return responseMap;
     }
 
     @AuraEnabled
-    public static Boolean setCurrentCompany(String companyName){
-        c2g.CODAAPICompany_2_0.SetCurrentCompanies(new List<String>{companyName});
-        return true;
+    public static Object setCurrentCompany(String companyName){
+
+        Object response = '';
+
+        try {
+            c2g.CODAAPICompany_2_0.SetCurrentCompanies(new List<String>{companyName});
+            response = 'success';
+        } catch (Exception e){
+            response = e.getMessage();
+        }
+
+        return response;
     }
 
     @AuraEnabled
@@ -38,7 +52,7 @@ public class JournalTestPanelController {
         JournalGenerator generator      = new JournalGenerator(companyName,currencyMap.get(companyName),month.year(), month.month());
 
         if (generator.PeriodId != null && generator.CurrencyId != null){
-            Set<Id> journalIds              = new Set<Id>();
+            Set<Id> journalIds = new Set<Id>();
 
             journalIds.add(generator.buildConsultingJournal());
             journalIds.add(generator.buildBespokeTrainingJournal());
