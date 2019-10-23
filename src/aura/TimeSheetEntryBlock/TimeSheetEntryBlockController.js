@@ -184,7 +184,8 @@
         var totals      = $C.get('v.totals');
         var activeField = $C.get('v.activeField');
         var billable    = activeField.Billable ? 1 : 2;
-        var newAmount   = records[activeField.RecordIndex].Entries[activeField.Day][billable];
+        var newAmount   = records[activeField.RecordIndex].Entries[activeField.Day][billable] ?
+            records[activeField.RecordIndex].Entries[activeField.Day][billable] : 0;
         var remainingHours = 24 - (totals[activeField.Day][0] + totals[activeField.Day][1] - activeField.OriginalAmount);
 
         if (newAmount && newAmount > remainingHours){
@@ -220,6 +221,7 @@
                     $C.set('v.records',records);
                     $C.set('v.totals',totals);
                     $A.get('e.force:refreshView').fire();
+                    console.log('REFRESH VIEW FIRED');
                 } else {
                     console.log('error with state: ' + response.getState());
                 }
