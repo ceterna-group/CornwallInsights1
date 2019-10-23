@@ -113,9 +113,8 @@
 
         var code = $C.find('codelistInput').getElement().value;
 
-        console.log(code);
-
         if (code){
+            var valid           = false;
             var codeList        = $C.get('v.codes');
             var codeId          = '';
             var notBillable     = false;
@@ -123,42 +122,43 @@
 
             for (var x = 0; x< codeList.length; x++){
                 if (codeList[x].Name === code){
+                    valid       = true;
                     codeId      = codeList[x].Id;
                     notBillable = codeList[x].Non_Billable__c;
                     codeList.splice(x,1);
                 }
             }
 
-            var priorRecords    = $C.get('v.priorRecords');
-            for (var x = 0; x < priorRecords.length; x++){
-                if (priorRecords[x].Name === code){
-                    priorRecords.splice(x,1);
+            if (valid){
+                var priorRecords    = $C.get('v.priorRecords');
+                for (var x = 0; x < priorRecords.length; x++){
+                    if (priorRecords[x].Name === code){
+                        priorRecords.splice(x,1);
+                    }
                 }
+
+                $C.set('v.priorRecords',priorRecords);
+                $C.find('codelistInput').getElement().value = '';
+
+                var blockedDates    = $C.get('v.blockedDates');
+                var records         = $C.get('v.records');
+
+                records.push({
+                    Name : code,
+                    Id : codeId,
+                    NotBillable : notBillable,
+                    Entries : [[blockedDates[0],'',''],[blockedDates[1],'',''],[blockedDates[2],'',''],
+                        [blockedDates[3],'',''],[blockedDates[4],'','']],
+                    BillableTotal : 0,
+                    NonBillableTotal : 0,
+                    ExpandBillable : billDefault && !notBillable,
+                    ExpandNonBillable : !billDefault || notBillable
+                });
+
+                $C.set('v.records',records);
+                $C.set('v.codes',codeList);
             }
-
-            $C.set('v.priorRecords',priorRecords);
-            $C.find('codelistInput').getElement().value = '';
-
-            var blockedDates    = $C.get('v.blockedDates');
-            var records         = $C.get('v.records');
-
-            records.push({
-                Name : code,
-                Id : codeId,
-                NotBillable : notBillable,
-                Entries : [[blockedDates[0],'',''],[blockedDates[1],'',''],[blockedDates[2],'',''],
-                    [blockedDates[3],'',''],[blockedDates[4],'','']],
-                BillableTotal : 0,
-                NonBillableTotal : 0,
-                ExpandBillable : billDefault && !notBillable,
-                ExpandNonBillable : !billDefault || notBillable
-            });
-
-            $C.set('v.records',records);
-            $C.set('v.codes',codeList);
-
         }
-
     },
     setActiveField : function($C,$E,$H){
 
@@ -184,8 +184,14 @@
         var totals      = $C.get('v.totals');
         var activeField = $C.get('v.activeField');
         var billable    = activeField.Billable ? 1 : 2;
-        var newAmount   = records[activeField.RecordIndex].Entries[activeField.Day][billable] ?
-                            records[activeField.RecordIndex].Entries[activeField.Day][billable] : 0;
+        var newAmount   = records[activeField.RecordIndex].Entries[activeField.Day][billable];
+        var remainingHours = 24 - (totals[activeField.Day][0] + totals[activeField.Day][1] - activeField.OriginalAmount);
+
+        if (newAmount && newAmount > remainingHours){
+            newAmount = remainingHours;
+            records[activeField.RecordIndex].Entries[activeField.Day][billable] = newAmount;
+        }
+
         var newTotal    = activeField.Billable ? 'BillableTotal' : 'NonBillableTotal';
 
         var allValid = $C.find('timeSheetEntry').reduce(function (validSoFar, inputCmp) {

@@ -132,7 +132,7 @@
         <!-- NEW ENTRY ROW -->
         <div class="timeGrid">
             <div>
-                <input class="slds-input sldsInput" aura:id="codelistInput" id="codelistInput"  name="opportunityLookup"
+                <input class="slds-input sldsInput" aura:id="codelistInput" id="codelistInput" name="opportunityLookup"
                        onchange="{!c.setRow}" placeholder="search codes..."/>
                 <datalist id="{!v.recordId}">
                     <aura:iteration items="{!v.codes}" var="code">
